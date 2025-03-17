@@ -407,6 +407,16 @@ function App() {
           >
             Cool Stuff
           </a>
+          <a 
+            href="#riya" 
+            className={`nav-link ${activeTab === 'riya' ? 'active' : ''}`}
+            onClick={(e) => {
+              e.preventDefault();
+              setActiveTab('riya');
+            }}
+          >
+            Riya
+          </a>
           <a href="#about" className="nav-link">About</a>
           <a href="#contact" className="nav-link">Contact</a>
         </div>
@@ -546,25 +556,8 @@ function App() {
 
           {activeTab === 'riya' && (
             <div className="riya-section">
-              <h2>Food Gallery</h2>
-              <div className="food-gallery">
-                {foodGallery.map((food, index) => (
-                  <div 
-                    key={index} 
-                    className="food-item"
-                  >
-                    <img 
-                      src={food.url} 
-                      alt={food.name}
-                      loading="lazy"
-                    />
-                    <div className="food-info">
-                      <h3>{food.name}</h3>
-                      <p>{food.category}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <h2>Riya</h2>
+              {/* Add your Riya section content here */}
             </div>
           )}
         </div>
