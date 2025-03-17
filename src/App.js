@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import './App.css';
+import Personal from './components/Personal';
 
 function FlappyBird() {
   const canvasRef = useRef(null);
@@ -297,69 +298,6 @@ function App() {
     setTouchEnd(0);
   };
 
-  const foodGallery = [
-    {
-      url: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?q=80&w=1200',
-      name: 'Colorful Macarons',
-      category: 'Desserts'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1200',
-      name: 'Healthy Bowl',
-      category: 'Healthy'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1563379926898-05f4575a45d8?q=80&w=1200',
-      name: 'Sushi Platter',
-      category: 'Japanese'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1565299543923-37dd37887442?q=80&w=1200',
-      name: 'Neapolitan Pizza',
-      category: 'Italian'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?q=80&w=1200',
-      name: 'Dim Sum',
-      category: 'Chinese'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?q=80&w=1200',
-      name: 'Dessert Platter',
-      category: 'Desserts'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?q=80&w=1200',
-      name: 'Fresh Salad',
-      category: 'Healthy'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?q=80&w=1200',
-      name: 'Pancakes',
-      category: 'Breakfast'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=1200',
-      name: 'Burger',
-      category: 'American'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?q=80&w=1200',
-      name: 'Ramen',
-      category: 'Japanese'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?q=80&w=1200',
-      name: 'Macarons',
-      category: 'Desserts'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1534766555764-ce878a5e3a2b?q=80&w=1200',
-      name: 'Pasta',
-      category: 'Italian'
-    }
-  ];
-
   return (
     <div className="App">
       <nav className="navbar">
@@ -408,14 +346,14 @@ function App() {
             Cool Stuff
           </a>
           <a 
-            href="#riya" 
-            className={`nav-link ${activeTab === 'riya' ? 'active' : ''}`}
+            href="#personal" 
+            className={`nav-link ${activeTab === 'personal' ? 'active' : ''}`}
             onClick={(e) => {
               e.preventDefault();
-              setActiveTab('riya');
+              setActiveTab('personal');
             }}
           >
-            Riya
+            Personal
           </a>
           <a href="#about" className="nav-link">About</a>
           <a href="#contact" className="nav-link">Contact</a>
@@ -554,12 +492,7 @@ function App() {
             </div>
           )}
 
-          {activeTab === 'riya' && (
-            <div className="riya-section">
-              <h2>Riya</h2>
-              {/* Add your Riya section content here */}
-            </div>
-          )}
+          {activeTab === 'personal' && <Personal />}
         </div>
       </div>
     </div>

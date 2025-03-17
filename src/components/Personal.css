@@ -1,0 +1,294 @@
+.personal-auth {
+  max-width: 400px;
+  margin: 2rem auto;
+  padding: 2rem;
+  text-align: center;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.personal-auth h2 {
+  color: #6366f1;
+  margin-bottom: 1rem;
+}
+
+.password-input {
+  width: 100%;
+  padding: 0.75rem;
+  margin: 1rem 0;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.password-input:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.submit-button {
+  background: #6366f1;
+  color: white;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.submit-button:hover {
+  background: #4f46e5;
+}
+
+.error-message {
+  color: #ef4444;
+  margin-top: 1rem;
+}
+
+.personal-section {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.personal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.personal-auth-container {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1a1a1a;  /* Dark background */
+  padding: 2rem;
+}
+
+.personal-auth-card {
+  background: #242424;  /* Slightly lighter than background */
+  padding: 2.5rem;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  border: 1px solid #333;
+}
+
+.lock-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 1.5rem;
+  color: #fff;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+.personal-auth-card h2 {
+  color: #fff;
+  font-size: 1.75rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.auth-description {
+  color: #999;
+  margin-bottom: 2rem;
+  font-size: 0.95rem;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.password-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input {
+  width: 100%;
+  padding: 1rem 3rem 1rem 1.25rem;
+  border: 2px solid #333;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: #1a1a1a;
+  color: #fff;
+}
+
+.password-input::placeholder {
+  color: #666;
+}
+
+.password-input:focus {
+  outline: none;
+  border-color: #555;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.05);
+}
+
+.toggle-password {
+  position: absolute;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-password:hover svg {
+  color: #fff;
+}
+
+.submit-button {
+  background: #333;
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.submit-button:hover {
+  background: #444;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.error-message {
+  color: #ff6b6b;
+  font-size: 0.9rem;
+  margin-top: -0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* Styles for the content after unlocking */
+.personal-section {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  color: #fff;
+  background: #1a1a1a;
+  min-height: 80vh;
+}
+
+.personal-content {
+  background: #242424;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 1px solid #333;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .personal-auth-card {
+    padding: 2rem;
+  }
+
+  .personal-auth-card h2 {
+    font-size: 1.5rem;
+  }
+}
+
+.riya-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.riya-message h1 {
+  font-size: 4rem;
+  font-weight: 800;
+  text-align: center;
+  background: linear-gradient(45deg, #ff69b4, #ff1493);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  animation: pulse 2s infinite;
+}
+
+.hearts {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: absolute;
+  animation: float 3s ease-in-out infinite;
+}
+
+.hearts span {
+  font-size: 2rem;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+.hearts-left {
+  left: 2rem;
+}
+
+.hearts-right {
+  right: 2rem;
+}
+
+.hearts span:nth-child(2) {
+  animation-delay: 0.3s;
+}
+
+.hearts span:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes bounce {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+@media (max-width: 768px) {
+  .riya-message h1 {
+    font-size: 2.5rem;
+  }
+  
+  .hearts {
+    display: none;
+  }
+} 
