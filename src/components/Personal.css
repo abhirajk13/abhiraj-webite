@@ -291,4 +291,121 @@
   .hearts {
     display: none;
   }
+}
+
+/* Weather Section Styles */
+.weather-section {
+  margin-top: 3rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, #1a1f25 0%, #17171d 100%);
+  border-radius: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.weather-section h2 {
+  color: #fff;
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 1.8rem;
+}
+
+.weather-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.weather-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.weather-icon {
+  font-size: 5rem;
+  animation: float 3s ease-in-out infinite;
+}
+
+.weather-temp {
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+}
+
+.weather-desc {
+  font-size: 1.2rem;
+  color: #a8a8a8;
+  text-transform: capitalize;
+}
+
+.weather-details {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+.weather-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #a8a8a8;
+}
+
+.weather-detail-item svg {
+  width: 20px;
+  height: 20px;
+  stroke: #6366f1;
+}
+
+.weather-update-time {
+  text-align: center;
+  color: #666;
+  font-size: 0.9rem;
+  margin-top: 1rem;
+}
+
+/* Weather animations */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+/* Responsive design for weather section */
+@media (max-width: 768px) {
+  .weather-section {
+    padding: 1rem;
+  }
+
+  .weather-details {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .weather-icon {
+    font-size: 4rem;
+  }
+
+  .weather-temp {
+    font-size: 2.5rem;
+  }
+}
+
+/* Weather loading and error states */
+.weather-section .loading-spinner {
+  min-height: 200px;
+}
+
+.weather-section .error-banner {
+  margin: 2rem 0;
+  padding: 1.5rem;
 } 
