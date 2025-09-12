@@ -82,7 +82,7 @@ const Personal = () => {
             <span>💖</span>
             <span>💝</span>
           </div>
-          <h1>Abhiraj IS THE BEST</h1>
+          <h1>RIYA IS THE BEST</h1>
           <div className="hearts hearts-right">
             <span>💗</span>
             <span>💓</span>
