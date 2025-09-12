@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import './App.css';
 import Personal from './components/Personal';
+import InteractiveGlobe from './components/InteractiveGlobe';
+import { CountryDropdown, PhotoGallery } from './components/CountryDropdown';
+import AdminPanel from './components/AdminPanel';
+import PhotoManager from './components/PhotoManager';
+import DataManager from './components/DataManager';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 
 function FlappyBird() {
@@ -178,74 +183,28 @@ function AppContent() {
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  
-  const images = [
-    {
-      url: 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?q=80&w=1200',
-      country: 'India',
-      description: 'Taj Mahal, Agra'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1485738422979-f5c462d49f74?q=80&w=1200',
-      country: 'USA',
-      description: 'Statue of Liberty, New York'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1518638150340-f706e86654de?q=80&w=1200',
-      country: 'Mexico',
-      description: 'Chichen Itza'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?q=80&w=1200',
-      country: 'Madeira',
-      description: 'Funchal Harbor'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1513735492246-483525079686?q=80&w=1200',
-      country: 'Portugal',
-      description: 'Lisbon Old Town'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1523365154888-8a758819b722?q=80&w=1200',
-      country: 'Sicily',
-      description: 'Taormina Ancient Theatre'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=1200',
-      country: 'France',
-      description: 'Paris, Eiffel Tower'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1597832071622-c850b1b9cace?q=80&w=1200',
-      country: 'France',
-      description: 'Lille Old Town'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1491557345352-5929e343eb89?q=80&w=1200',
-      country: 'Belgium',
-      description: 'Bruges Canal'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?q=80&w=1200',
-      country: 'Turkey',
-      description: 'Istanbul, Hagia Sophia'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1539020140153-e479b8c22e70?q=80&w=1200',
-      country: 'Morocco',
-      description: 'Marrakesh Medina'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1511527661048-7fe73d85e9a4?q=80&w=1200',
-      country: 'Spain',
-      description: 'Barcelona, Sagrada Familia'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1559636425-c7d0eb51fe53?q=80&w=1200',
-      country: 'Spain',
-      description: 'Seville, Plaza de España'
+  const [selectedCountry, setSelectedCountry] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [visitedCountries, setVisitedCountries] = useState(() => {
+    try {
+      const saved = localStorage.getItem('visitedCountries');
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      console.warn('Failed to load visited countries from localStorage:', error);
+      return [];
     }
-  ];
+  });
+  const [countryPhotos, setCountryPhotos] = useState(() => {
+    try {
+      const saved = localStorage.getItem('countryPhotos');
+      return saved ? JSON.parse(saved) : {};
+    } catch (error) {
+      console.warn('Failed to load country photos from localStorage:', error);
+      return {};
+    }
+  });
+  
+  const images = [];
 
   const socialLinks = {
     github: "https://github.com/abhirajk13",
@@ -308,6 +267,51 @@ function AppContent() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Save visited countries to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('visitedCountries', JSON.stringify(visitedCountries));
+    } catch (error) {
+      console.warn('Failed to save visited countries to localStorage:', error);
+    }
+  }, [visitedCountries]);
+
+  // Save country photos to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('countryPhotos', JSON.stringify(countryPhotos));
+    } catch (error) {
+      console.warn('Failed to save country photos to localStorage:', error);
+    }
+  }, [countryPhotos]);
+
+  const handleCountrySelect = (country) => {
+    setSelectedCountry(country);
+  };
+
+  const handleGlobeCountryClick = (country) => {
+    setSelectedCountry(country.name);
+  };
+
+  const handleAddPin = (newPin) => {
+    setVisitedCountries(prev => [...prev, newPin]);
+  };
+
+  const handleRemovePin = (index) => {
+    setVisitedCountries(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const toggleAdmin = () => {
+    setIsAdmin(!isAdmin);
+  };
+
+  const handlePhotosUpdate = (country, photos) => {
+    setCountryPhotos(prev => ({
+      ...prev,
+      [country]: photos
+    }));
+  };
+
   if (isLoading) {
     return (
       <div className="loading-screen">
@@ -335,16 +339,6 @@ function AppContent() {
             }}
           >
             Home
-          </a>
-          <a 
-            href="#achievements" 
-            className={`nav-link ${activeTab === 'achievements' ? 'active' : ''}`}
-            onClick={(e) => {
-              e.preventDefault();
-              setActiveTab('achievements');
-            }}
-          >
-            Achievements
           </a>
           <a 
             href="#countries" 
@@ -376,14 +370,12 @@ function AppContent() {
           >
             Personal
           </a>
-          <a href="#about" className="nav-link">About</a>
-          <a href="#contact" className="nav-link">Contact</a>
         </div>
         <div className="nav-actions">
           <button className="theme-toggle" onClick={toggleTheme}>
             <i className={`fas ${isDarkMode ? 'fa-sun' : 'fa-moon'}`}></i>
           </button>
-          <button className="contact-button">Get in Touch</button>
+        <button className="contact-button">Get in Touch</button>
         </div>
       </nav>
 
@@ -460,18 +452,18 @@ function AppContent() {
                     <li>Managed full integration lifecycle and large-scale data migrations across Salesforce and SAP</li>
                     <li>Conducted technical workshops, mentored client teams, and supported pre-sales initiatives</li>
                   </ul>
-                </div>
+                    </div>
                 <div className="experience-item">
                   <div className="experience-header">
                     <h3>MuleSoft Technical Consultant Intern</h3>
                     <span className="duration">Jun 2021 – Aug 2021</span>
-                  </div>
+                    </div>
                   <ul className="experience-details">
                     <li>Created APIs following the full development lifecycle</li>
                     <li>Automated CloudHub infrastructure maintenance and resource creation</li>
                     <li>Collaborated with MuleSoft architects and consultants</li>
                   </ul>
-                </div>
+                    </div>
                 <div className="experience-item">
                   <div className="experience-header">
                     <h3>Tata Consultancy Services Placement</h3>
@@ -534,7 +526,7 @@ function AppContent() {
                 <div className="volunteer-item">Sports Leaders Award Level 1</div>
                 <div className="volunteer-item">Classroom assistant at Castleview Primary School</div>
               </div>
-            </div>
+                      </div>
 
             <div className="interests-section">
               <h2>Interests & Activities</h2>
@@ -544,8 +536,8 @@ function AppContent() {
                 <div className="interest-item">Drums (Grade 6, performed across UK)</div>
                 <div className="interest-item">Finance & Investment (member of university society)</div>
                 <div className="interest-item">Swimming (Level 8, completed 5K Swimathon)</div>
-              </div>
-            </div>
+                      </div>
+                    </div>
 
             <div className="languages-section">
               <h2>Languages</h2>
@@ -574,50 +566,76 @@ function AppContent() {
         )}
 
         <div className="tab-content">
-          {activeTab === 'achievements' && (
-            <div>
-              <h2>My Achievements</h2>
-              <ul>
-                <li>Achievement 1</li>
-                <li>Achievement 2</li>
-                <li>Achievement 3</li>
-              </ul>
-            </div>
-          )}
-
           {activeTab === 'countries' && (
             <div className="countries-section">
-              <h2>Countries I've Visited</h2>
-              <div 
-                className="carousel-container"
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-              >
-                <div className="carousel-track">
-                  {[-1, 0, 1].map((offset) => {
-                    const index = (currentImageIndex + offset + images.length) % images.length;
-                    return (
-                      <div 
-                        key={`${index}-${offset}`}
-                        className={`carousel-item ${offset === 0 ? 'active' : offset === -1 ? 'prev' : 'next'}`}
-                        onClick={() => offset !== 0 && (offset === -1 ? prevImage() : nextImage())}
-                      >
-                        <img 
-                          src={images[index].url} 
-                          alt={images[index].country}
-                          loading={offset === 0 ? "eager" : "lazy"}
-                          decoding="async"
-                        />
-                        {offset === 0 && (
-                          <div className="image-caption">
-                            <h3>{images[index].country}</h3>
-                            <p>{images[index].description}</p>
+              <div className="countries-header">
+                <h2>Interactive Travel Map</h2>
+                <p className="countries-subtitle">Explore my journey around the world</p>
+                <div className="countries-counter">
+                  <span className="counter-number">{visitedCountries.length}</span>
+                  <span className="counter-label">Countries Visited</span>
+                </div>
+              </div>
+              
+              <div className="globe-section">
+                <InteractiveGlobe 
+                  onCountryClick={handleGlobeCountryClick}
+                  selectedCountry={selectedCountry}
+                  visitedCountries={visitedCountries}
+                  onAddPin={handleAddPin}
+                />
+                <AdminPanel
+                  isAdmin={isAdmin}
+                  onToggleAdmin={toggleAdmin}
+                  onAddPin={handleAddPin}
+                  onRemovePin={handleRemovePin}
+                  visitedCountries={visitedCountries}
+                />
                           </div>
-                        )}
+              
+              <div className="country-explorer">
+                <CountryDropdown
+                  selectedCountry={selectedCountry}
+                  onCountrySelect={handleCountrySelect}
+                  visitedCountries={visitedCountries}
+                  countryPhotos={countryPhotos}
+                />
+                
+                {selectedCountry && (
+                  <PhotoGallery
+                    country={selectedCountry}
+                    photos={countryPhotos[selectedCountry] || []}
+                  />
+                )}
+                
+                {selectedCountry && (
+                  <PhotoManager
+                    country={selectedCountry}
+                    onPhotosUpdate={handlePhotosUpdate}
+                  />
+                )}
                       </div>
-                    );
-                  })}
+              
+              <div className="countries-stats">
+                <div className="stat-card">
+                  <i className="fas fa-globe-americas"></i>
+                  <h4>Countries</h4>
+                  <span>{visitedCountries.length}</span>
+                </div>
+                <div className="stat-card">
+                  <i className="fas fa-camera"></i>
+                  <h4>Photos</h4>
+                  <span>{Object.values(countryPhotos).reduce((total, photos) => total + photos.length, 0)}</span>
+                </div>
+                <div className="stat-card">
+                  <i className="fas fa-map-pin"></i>
+                  <h4>Pins</h4>
+                  <span>{visitedCountries.length}</span>
+                </div>
+                <div className="stat-card">
+                  <i className="fas fa-heart"></i>
+                  <h4>Memories</h4>
+                  <span>∞</span>
                 </div>
               </div>
             </div>
@@ -631,6 +649,9 @@ function AppContent() {
 
           {activeTab === 'personal' && <Personal />}
         </div>
+        
+        {/* Data Manager - Available on all pages */}
+        <DataManager onDataChange={() => window.location.reload()} />
       </div>
     </div>
   );
