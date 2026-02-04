@@ -19,12 +19,24 @@ const Valentine = () => {
   const [clickableHearts, setClickableHearts] = useState([]);
   const [sparkles, setSparkles] = useState([]);
   const [fireworks, setFireworks] = useState([]);
+  const [showPhotoGallery, setShowPhotoGallery] = useState(false);
+  
+  // Photos - our memories together 💕
+  const photos = [
+    '/valentines-photos/photo1.jpeg',
+    '/valentines-photos/photo2.jpeg',
+    '/valentines-photos/photo3.jpeg',
+    '/valentines-photos/photo4.jpeg',
+    '/valentines-photos/photo5.jpeg',
+    '/valentines-photos/photo6.jpeg',
+    '/valentines-photos/photo7.jpeg'
+  ];
   
   const audioRef = useRef(null);
   const celebrationAudioRef = useRef(null);
   const containerRef = useRef(null);
   
-  const HEARTS_TO_COLLECT = 5; // Number of hearts to catch before YES becomes active
+  const HEARTS_TO_COLLECT = 10; // Number of hearts to catch before YES becomes active
 
   // ==================== FLOATING BACKGROUND HEARTS ====================
   useEffect(() => {
@@ -56,24 +68,25 @@ const Valentine = () => {
     
     const newHeart = {
       id: Math.random(),
-      x: 10 + Math.random() * 80,
-      y: 10 + Math.random() * 70,
-      size: 40 + Math.random() * 20,
-      emoji: ['💖', '💕', '💗', '💘'][Math.floor(Math.random() * 4)]
+      x: 5 + Math.random() * 85,  // Wider range
+      y: 15 + Math.random() * 65,
+      size: 28 + Math.random() * 15,  // Smaller hearts (28-43px instead of 40-60px)
+      emoji: ['💖', '💕', '💗', '💘'][Math.floor(Math.random() * 4)],
+      speedClass: Math.random() > 0.5 ? 'fast-heart' : ''  // Some hearts move faster
     };
     
     setClickableHearts(prev => [...prev, newHeart]);
     
-    // Remove heart after 3 seconds if not clicked
+    // Remove heart after 1.8 seconds if not clicked (faster disappear)
     setTimeout(() => {
       setClickableHearts(prev => prev.filter(h => h.id !== newHeart.id));
-    }, 3000);
+    }, 1800);
   }, [gamePhase]);
 
   useEffect(() => {
     if (gamePhase === 'catching') {
-      // Spawn hearts periodically during catching phase
-      const interval = setInterval(spawnClickableHeart, 1000);
+      // Spawn hearts more frequently but they disappear faster
+      const interval = setInterval(spawnClickableHeart, 700);
       spawnClickableHeart(); // Spawn first heart immediately
       return () => clearInterval(interval);
     }
@@ -110,23 +123,36 @@ const Valentine = () => {
   const handleNoButtonHover = () => {
     if (gamePhase !== 'asking') return;
     
-    const container = containerRef.current;
-    if (!container) return;
+    // Get viewport dimensions
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const buttonWidth = 140;
+    const buttonHeight = 60;
+    const padding = 50;
     
-    const rect = container.getBoundingClientRect();
-    const buttonWidth = 120;
-    const buttonHeight = 50;
-    const padding = 20;
+    // Calculate safe area for button (keep away from edges)
+    const maxX = viewportWidth - buttonWidth - padding;
+    const maxY = viewportHeight - buttonHeight - padding;
     
-    // Calculate random new position, getting more erratic with each escape
-    const maxX = rect.width - buttonWidth - padding;
-    const maxY = rect.height - buttonHeight - padding;
+    // Generate random position within safe bounds
+    let newX = padding + Math.random() * (maxX - padding);
+    let newY = padding + Math.random() * (maxY - padding);
     
-    // Increase escape distance with each attempt
-    const escapeMultiplier = Math.min(1 + noButtonEscapeCount * 0.2, 2);
+    // Make sure button doesn't stay too close to current position
+    const currentX = noButtonPosition.x || viewportWidth / 2;
+    const currentY = noButtonPosition.y || viewportHeight / 2;
     
-    let newX = padding + Math.random() * maxX * escapeMultiplier;
-    let newY = padding + Math.random() * maxY * escapeMultiplier;
+    // If new position is too close, push it further away
+    const minDistance = 150;
+    const dx = newX - currentX;
+    const dy = newY - currentY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distance < minDistance) {
+      // Move in the opposite direction
+      newX = currentX - dx - minDistance;
+      newY = currentY - dy - minDistance;
+    }
     
     // Keep within bounds
     newX = Math.max(padding, Math.min(newX, maxX));
@@ -150,6 +176,11 @@ const Valentine = () => {
     if (celebrationAudioRef.current) {
       celebrationAudioRef.current.play().catch(() => {});
     }
+    
+    // Show photo gallery after 4 seconds of celebration
+    setTimeout(() => {
+      setShowPhotoGallery(true);
+    }, 4000);
   };
 
   // ==================== FIREWORKS ANIMATION ====================
@@ -236,23 +267,25 @@ const Valentine = () => {
         <source src="https://www.soundjay.com/misc/sounds/fanfare-1.mp3" type="audio/mpeg" />
       </audio>
 
-      {/* Floating background hearts */}
-      <div className="floating-hearts-bg">
-        {floatingHearts.map(heart => (
-          <span
-            key={heart.id}
-            className="floating-heart"
-            style={{
-              left: `${heart.x}%`,
-              fontSize: `${heart.size}px`,
-              animationDuration: `${heart.duration}s`,
-              animationDelay: `${heart.delay}s`
-            }}
-          >
-            {heart.emoji}
-          </span>
-        ))}
-      </div>
+      {/* Floating background hearts - hidden during catching game */}
+      {gamePhase !== 'catching' && (
+        <div className="floating-hearts-bg">
+          {floatingHearts.map(heart => (
+            <span
+              key={heart.id}
+              className="floating-heart"
+              style={{
+                left: `${heart.x}%`,
+                fontSize: `${heart.size}px`,
+                animationDuration: `${heart.duration}s`,
+                animationDelay: `${heart.delay}s`
+              }}
+            >
+              {heart.emoji}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Music toggle button */}
       <button className="music-toggle" onClick={toggleMusic}>
@@ -293,7 +326,7 @@ const Valentine = () => {
           {clickableHearts.map(heart => (
             <button
               key={heart.id}
-              className="clickable-heart pulse-animation"
+              className={`clickable-heart pulse-animation ${heart.speedClass}`}
               style={{
                 left: `${heart.x}%`,
                 top: `${heart.y}%`,
@@ -338,13 +371,14 @@ const Valentine = () => {
             </button>
             
             <button
-              className="no-button"
+              className={`no-button ${noButtonEscapeCount > 0 ? 'escaping' : ''}`}
               style={{
-                position: noButtonEscapeCount > 0 ? 'absolute' : 'relative',
+                position: noButtonEscapeCount > 0 ? 'fixed' : 'relative',
                 left: noButtonEscapeCount > 0 ? `${noButtonPosition.x}px` : 'auto',
                 top: noButtonEscapeCount > 0 ? `${noButtonPosition.y}px` : 'auto',
-                transform: `scale(${Math.max(0.5, 1 - noButtonEscapeCount * 0.1)})`,
-                opacity: Math.max(0.3, 1 - noButtonEscapeCount * 0.1)
+                transform: `scale(${Math.max(0.6, 1 - noButtonEscapeCount * 0.05)})`,
+                opacity: Math.max(0.5, 1 - noButtonEscapeCount * 0.05),
+                zIndex: 9999
               }}
               onMouseEnter={handleNoButtonHover}
               onTouchStart={handleNoButtonHover}
@@ -430,6 +464,22 @@ const Valentine = () => {
                 </span>
               ))}
             </div>
+            
+            {/* ==================== PHOTO COLLAGE BACKGROUND ==================== */}
+            {showPhotoGallery && (
+              <div className="photo-collage-bg">
+                {photos.map((photo, index) => (
+                  <div 
+                    key={index}
+                    className={`collage-photo photo-${index + 1}`}
+                    style={{ animationDelay: `${index * 0.3}s` }}
+                  >
+                    <img src={photo} alt={`Memory ${index + 1}`} />
+                    <span className="photo-heart">💖</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
