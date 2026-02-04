@@ -438,7 +438,7 @@ const Valentine = () => {
             </div>
             
             <p className="celebration-message animate-message">
-              Happy Valentine's Day Riya ❤️
+              Riya ❤️
             </p>
             <p className="celebration-submessage animate-submessage">
               You are my favorite person in the universe. 🌌
