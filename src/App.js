@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import Personal from './components/Personal';
 import InteractiveGlobe from './components/InteractiveGlobe';
@@ -7,6 +8,7 @@ import AdminPanel from './components/AdminPanel';
 import PhotoManager from './components/PhotoManager';
 import DataManager from './components/DataManager';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+import Valentine from './components/Valentine';
 
 function FlappyBird() {
   const canvasRef = useRef(null);
@@ -659,9 +661,19 @@ function AppContent() {
 
 function App() {
   return (
-    <ThemeProvider>
-      <AppContent />
-    </ThemeProvider>
+    <Router>
+      <Routes>
+        {/* Valentine's Day Proposal Page - Special route for Riya 💖 */}
+        <Route path="/valentines" element={<Valentine />} />
+        
+        {/* Main website with theme provider */}
+        <Route path="/*" element={
+          <ThemeProvider>
+            <AppContent />
+          </ThemeProvider>
+        } />
+      </Routes>
+    </Router>
   );
 }
 
