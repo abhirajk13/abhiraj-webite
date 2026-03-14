@@ -1,660 +1,614 @@
 import { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
-import Personal from './components/Personal';
-import InteractiveGlobe from './components/InteractiveGlobe';
-import { CountryDropdown, PhotoGallery } from './components/CountryDropdown';
-import AdminPanel from './components/AdminPanel';
-import PhotoManager from './components/PhotoManager';
-import DataManager from './components/DataManager';
-import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import Valentine from './components/Valentine';
 
-function FlappyBird() {
-  const canvasRef = useRef(null);
-  const [gameStarted, setGameStarted] = useState(false);
-  const [score, setScore] = useState(0);
-  const [highScore, setHighScore] = useState(0);
-  const [gameOver, setGameOver] = useState(false);
-  
-  const birdRef = useRef({
-    y: 250,
-    velocity: 0,
-    gravity: 0.6,
-    jump: -10,
-  });
-
-  const pipesRef = useRef([]);
-  const animationFrameRef = useRef();
+// Animated Counter Component - defined outside to prevent re-renders
+function AnimatedCounter({ end, duration = 2000, suffix = '' }) {
+  const [count, setCount] = useState(0);
+  const countRef = useRef(null);
+  const hasAnimatedRef = useRef(false);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    let bird = birdRef.current;
-    let pipes = pipesRef.current;
+    const element = countRef.current;
+    if (!element) return;
 
-    const createPipe = () => {
-      const gap = 150;
-      const minHeight = 50;
-      const maxHeight = canvas.height - gap - minHeight;
-      const height = Math.random() * (maxHeight - minHeight) + minHeight;
-      
-      return {
-        x: canvas.width,
-        height,
-        gap,
-        counted: false
-      };
-    };
-
-    const drawBird = () => {
-      ctx.fillStyle = '#FFD700';
-      ctx.beginPath();
-      ctx.arc(100, bird.y, 15, 0, 2 * Math.PI);
-      ctx.fill();
-    };
-
-    const drawPipes = () => {
-      ctx.fillStyle = '#4CAF50';
-      pipes.forEach(pipe => {
-        // Top pipe
-        ctx.fillRect(pipe.x, 0, 50, pipe.height);
-        // Bottom pipe
-        ctx.fillRect(pipe.x, pipe.height + pipe.gap, 50, canvas.height);
-      });
-    };
-
-    const updateGame = () => {
-      if (!gameStarted || gameOver) return;
-
-      // Clear canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Update bird
-      bird.velocity += bird.gravity;
-      bird.y += bird.velocity;
-
-      // Update pipes
-      if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 300) {
-        pipes.push(createPipe());
-      }
-
-      pipes.forEach((pipe, index) => {
-        pipe.x -= 2;
-
-        // Check collision
-        if (
-          100 < pipe.x + 50 &&
-          100 > pipe.x &&
-          (bird.y < pipe.height || bird.y > pipe.height + pipe.gap)
-        ) {
-          setGameOver(true);
-          setHighScore(prev => Math.max(prev, score));
-          return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimatedRef.current) {
+          hasAnimatedRef.current = true;
+          let start = 0;
+          const increment = end / (duration / 16);
+          const timer = setInterval(() => {
+            start += increment;
+            if (start >= end) {
+              setCount(end);
+              clearInterval(timer);
+            } else {
+              setCount(Math.floor(start));
+            }
+          }, 16);
         }
+      },
+      { threshold: 0.5 }
+    );
 
-        // Score point
-        if (!pipe.counted && pipe.x < 100) {
-          pipe.counted = true;
-          setScore(prev => prev + 1);
-        }
-      });
+    observer.observe(element);
 
-      // Remove off-screen pipes
-      pipesRef.current = pipes.filter(pipe => pipe.x > -50);
+    return () => observer.disconnect();
+  }, [end, duration]);
 
-      // Check boundaries
-      if (bird.y > canvas.height || bird.y < 0) {
-        setGameOver(true);
-        setHighScore(prev => Math.max(prev, score));
-        return;
-      }
-
-      // Draw everything
-      drawBird();
-      drawPipes();
-
-      // Draw score
-      ctx.fillStyle = 'white';
-      ctx.font = '24px Arial';
-      ctx.fillText(`Score: ${score}`, 10, 30);
-
-      animationFrameRef.current = requestAnimationFrame(updateGame);
-    };
-
-    const handleClick = () => {
-      if (gameOver) {
-        // Reset game
-        bird.y = 250;
-        bird.velocity = 0;
-        pipesRef.current = [];
-        setScore(0);
-        setGameOver(false);
-      } else {
-        if (!gameStarted) {
-          setGameStarted(true);
-        }
-        bird.velocity = bird.jump;
-      }
-    };
-
-    canvas.addEventListener('click', handleClick);
-    if (gameStarted && !gameOver) {
-      animationFrameRef.current = requestAnimationFrame(updateGame);
-    }
-
-    return () => {
-      canvas.removeEventListener('click', handleClick);
-      cancelAnimationFrame(animationFrameRef.current);
-    };
-  }, [gameStarted, gameOver, score]);
-
-  return (
-    <div className="flappy-bird-container">
-      <div className="game-header">
-        <h3>High Score: {highScore}</h3>
-      </div>
-      <canvas
-        ref={canvasRef}
-        width={1200}
-        height={700}
-        className="flappy-bird-canvas"
-      />
-      {!gameStarted && (
-        <div className="game-overlay">
-          <h2>Flappy Bird</h2>
-          <p>Click to start</p>
-        </div>
-      )}
-      {gameOver && (
-        <div className="game-overlay">
-          <h2>Game Over!</h2>
-          <p>Score: {score}</p>
-          <p>Click to play again</p>
-        </div>
-      )}
-    </div>
-  );
+  return <span ref={countRef}>{count}{suffix}</span>;
 }
 
 function AppContent() {
-  const { isDarkMode, toggleTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState('home');
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [touchStart, setTouchStart] = useState(0);
-  const [touchEnd, setTouchEnd] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedCountry, setSelectedCountry] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [visitedCountries, setVisitedCountries] = useState(() => {
-    try {
-      const saved = localStorage.getItem('visitedCountries');
-      return saved ? JSON.parse(saved) : [];
-    } catch (error) {
-      console.warn('Failed to load visited countries from localStorage:', error);
-      return [];
-    }
-  });
-  const [countryPhotos, setCountryPhotos] = useState(() => {
-    try {
-      const saved = localStorage.getItem('countryPhotos');
-      return saved ? JSON.parse(saved) : {};
-    } catch (error) {
-      console.warn('Failed to load country photos from localStorage:', error);
-      return {};
-    }
-  });
+  const [activeSection, setActiveSection] = useState('hero');
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [typedText, setTypedText] = useState('');
   
-  const images = [];
+  const fullTitle = "Software Engineer & AI Solutions Architect";
+  const sectionsRef = useRef({});
 
-  const socialLinks = {
-    github: "https://github.com/abhirajk13",
-    linkedin: "https://linkedin.com/in/yourusername",
-    twitter: "https://twitter.com/yourusername",
-    instagram: "https://instagram.com/yourusername"
-  };
-
-  const skills = [
-    { name: "Web Development", level: 90 },
-    { name: "Machine Learning", level: 85 },
-    { name: "Cloud Computing", level: 80 },
-    { name: "UI/UX Design", level: 75 }
-  ];
-
-  const nextImage = () => {
-    if (isTransitioning) return;
-    setIsTransitioning(true);
-    setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
-    setTimeout(() => setIsTransitioning(false), 500); // Match transition duration
-  };
-
-  const prevImage = () => {
-    if (isTransitioning) return;
-    setIsTransitioning(true);
-    setCurrentImageIndex((prevIndex) => (prevIndex - 1 + images.length) % images.length);
-    setTimeout(() => setIsTransitioning(false), 500); // Match transition duration
-  };
-
-  const handleTouchStart = (e) => {
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchMove = (e) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > 50;
-    const isRightSwipe = distance < -50;
-
-    if (isLeftSwipe) {
-      nextImage();
-    }
-    if (isRightSwipe) {
-      prevImage();
-    }
-
-    setTouchStart(0);
-    setTouchEnd(0);
-  };
-
+  // Typing animation for hero title
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
+    if (isLoading) return;
+    
+    let index = 0;
+    const typeInterval = setInterval(() => {
+      if (index <= fullTitle.length) {
+        setTypedText(fullTitle.slice(0, index));
+        index++;
+      } else {
+        clearInterval(typeInterval);
+      }
+    }, 50);
+
+    return () => clearInterval(typeInterval);
+  }, [isLoading]);
+
+  // Track mouse for gradient effect
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  // Scroll progress indicator
+  useEffect(() => {
+    const handleScroll = () => {
+      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = (window.scrollY / totalHeight) * 100;
+      setScrollProgress(progress);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Loading screen
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 2200);
     return () => clearTimeout(timer);
   }, []);
 
-  // Save visited countries to localStorage whenever it changes
+  // Intersection Observer for scroll animations
   useEffect(() => {
-    try {
-      localStorage.setItem('visitedCountries', JSON.stringify(visitedCountries));
-    } catch (error) {
-      console.warn('Failed to save visited countries to localStorage:', error);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            if (entry.target.id) {
+              setActiveSection(entry.target.id);
+            }
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '-50px' }
+    );
+
+    document.querySelectorAll('.animate-on-scroll').forEach((el) => {
+      observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, [isLoading]);
+
+  // Smooth scroll to section
+  const scrollToSection = (sectionId) => {
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Data from CV
+  const profile = {
+    name: "Abhiraj Kane",
+    title: "Software Engineer & AI Solutions Architect",
+    tagline: "Building enterprise systems and applied AI solutions",
+    email: "abhirajkane@gmail.com",
+    phone: "+44 (0)7957365499",
+    location: "London, UK",
+    github: "https://github.com/abhirajk13",
+    linkedin: "https://www.linkedin.com/in/abhirajk"
+  };
+
+  // Skills - exactly as stated in CV
+  const skills = {
+    ai: ["LangChain", "Prompt Engineering", "AI Agent Architecture", "Vector Database (RAG)", "Claude APIs", "Flask"],
+    integration: ["MuleSoft", "REST/SOAP", "DataWeave", "Anypoint Platform"],
+    development: ["Python", "Java", "C#", "C", "JavaScript", "HTML", "CSS", "Flask"],
+    databases: ["SQL", "MySQL", "PostgreSQL", "SOQL"],
+    devops: ["Git", "GitHub Actions", "CI/CD Pipelines", "Maven"],
+    methodologies: ["Agile", "Scrum", "TDD"]
+  };
+
+  const experience = [
+    {
+      title: "Salesforce Integration Consultant",
+      company: "Salesforce",
+      period: "Sep 2022 – Present",
+      highlights: [
+        "Designed and deployed enterprise integration architectures using MuleSoft, connecting Salesforce and SAP across large EMEA clients",
+        "Built scalable APIs and batch pipelines processing millions of records across distributed enterprise systems",
+        "Led development across distributed engineering teams, ensuring high code quality and reliable production deployments",
+        "Delivered technical workshops and mentoring to enable client teams to adopt modern integration patterns"
+      ],
+      tags: ["MuleSoft", "Salesforce", "API Design", "Enterprise Architecture"]
+    },
+    {
+      title: "Applied AI & LLM Engineering",
+      company: "Salesforce / Independent",
+      period: "2024 – Present",
+      highlights: [
+        "Built AI-assisted developer workflows using Salesforce Agentforce and LLM-powered tools",
+        "Developed agent-based prototypes using LangChain to orchestrate tool use and API calls",
+        "Designed multi-agent AI systems where specialized agents acted as developers, BAs, and QA engineers",
+        "Worked with MuleSoft Agent Fabric to orchestrate AI agents through secure middleware layers"
+      ],
+      tags: ["LangChain", "AI Agents", "LLMs", "Agentforce"]
+    },
+    {
+      title: "MuleSoft Technical Consultant Intern",
+      company: "Salesforce",
+      period: "Jun 2021 – Aug 2021",
+      highlights: [
+        "Completed intensive training covering API-led connectivity and enterprise middleware architectures",
+        "Developed automation scripts to streamline CloudHub infrastructure provisioning",
+        "Built and tested REST APIs following the full API development lifecycle"
+      ],
+      tags: ["MuleSoft", "REST APIs", "CloudHub"]
     }
-  }, [visitedCountries]);
+  ];
 
-  // Save country photos to localStorage whenever it changes
-  useEffect(() => {
-    try {
-      localStorage.setItem('countryPhotos', JSON.stringify(countryPhotos));
-    } catch (error) {
-      console.warn('Failed to save country photos to localStorage:', error);
+  const projects = [
+    {
+      name: "NovaraHR",
+      url: "novarahr.com",
+      period: "Feb 2025 – Present",
+      description: "AI-powered HR operations platform automating internal workflows",
+      features: [
+        "Custom RAG knowledge system using vector embeddings for policy querying",
+        "Backend services in Python/Flask integrating LLM APIs",
+        "Prompt engineering workflows to reduce hallucination",
+        "Conversational AI interfaces for HR automation"
+      ],
+      tags: ["Python", "Flask", "RAG", "LLMs", "Vector DB"]
     }
-  }, [countryPhotos]);
+  ];
 
-  const handleCountrySelect = (country) => {
-    setSelectedCountry(country);
-  };
+  const certifications = [
+    { name: "MuleSoft Certified Developer", icon: "🔗" },
+    { name: "Salesforce Certified AI Associate", icon: "🤖" },
+    { name: "Salesforce AgentForce Specialist", icon: "🧠" },
+    { name: "Salesforce Trailhead Ranger", icon: "⭐" },
+    { name: "AWS Cloud Fundamentals", icon: "☁️" }
+  ];
 
-  const handleGlobeCountryClick = (country) => {
-    setSelectedCountry(country.name);
-  };
-
-  const handleAddPin = (newPin) => {
-    setVisitedCountries(prev => [...prev, newPin]);
-  };
-
-  const handleRemovePin = (index) => {
-    setVisitedCountries(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const toggleAdmin = () => {
-    setIsAdmin(!isAdmin);
-  };
-
-  const handlePhotosUpdate = (country, photos) => {
-    setCountryPhotos(prev => ({
-      ...prev,
-      [country]: photos
-    }));
-  };
+  const education = [
+    {
+      school: "University College London (UCL)",
+      degree: "MSc Technology Management",
+      period: "2024 – 2026",
+      grade: "Distinction"
+    },
+    {
+      school: "Royal Holloway, University of London",
+      degree: "BSc Computer Science & Artificial Intelligence",
+      period: "2019 – 2022",
+      grade: "First Class Honours"
+    }
+  ];
 
   if (isLoading) {
     return (
       <div className="loading-screen">
         <div className="loading-content">
-          <div className="loading-spinner"></div>
-          <h2>Loading...</h2>
+          <div className="loading-logo">
+            <span className="logo-letter">A</span>
+            <span className="logo-letter">K</span>
+          </div>
+          <div className="loading-bar">
+            <div className="loading-progress"></div>
+          </div>
+          <p className="loading-text">
+            <span className="loading-dot">.</span>
+            <span className="loading-dot">.</span>
+            <span className="loading-dot">.</span>
+          </p>
+        </div>
+        <div className="loading-shapes">
+          <div className="shape shape-1"></div>
+          <div className="shape shape-2"></div>
+          <div className="shape shape-3"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`App ${isDarkMode ? 'dark-theme' : 'light-theme'}`}>
-      <nav className="navbar">
-        <div className="nav-brand">
-          <h1>Abhiraj</h1>
-        </div>
-        <div className="nav-links">
-          <a 
-            href="#home" 
-            className={`nav-link ${activeTab === 'home' ? 'active' : ''}`}
-            onClick={(e) => {
-              e.preventDefault();
-              setActiveTab('home');
-            }}
+    <div className="App">
+      {/* Scroll Progress Bar */}
+      <div className="scroll-progress" style={{ width: `${scrollProgress}%` }} />
+      
+      {/* Animated background gradient */}
+      <div 
+        className="gradient-bg"
+        style={{
+          '--mouse-x': `${mousePosition.x}px`,
+          '--mouse-y': `${mousePosition.y}px`
+        }}
+      />
+
+      {/* Floating shapes */}
+      <div className="floating-shapes">
+        <div className="float-shape float-1"></div>
+        <div className="float-shape float-2"></div>
+        <div className="float-shape float-3"></div>
+        <div className="float-shape float-4"></div>
+      </div>
+      
+      {/* Navigation */}
+      <nav className="navbar glass">
+        <button
+          className={`nav-link nav-home ${activeSection === 'hero' ? 'active' : ''}`}
+          onClick={() => scrollToSection('hero')}
+          aria-label="Back to top"
+        >
+          👤
+        </button>
+        {['About', 'Skills', 'Experience', 'Projects', 'Contact'].map((item) => (
+          <button
+            key={item}
+            className={`nav-link ${activeSection === item.toLowerCase() ? 'active' : ''}`}
+            onClick={() => scrollToSection(item.toLowerCase())}
           >
-            Home
-          </a>
-          <a 
-            href="#countries" 
-            className={`nav-link ${activeTab === 'countries' ? 'active' : ''}`}
-            onClick={(e) => {
-              e.preventDefault();
-              setActiveTab('countries');
-            }}
-          >
-            Countries
-          </a>
-          <a 
-            href="#cool-stuff" 
-            className={`nav-link ${activeTab === 'cool-stuff' ? 'active' : ''}`}
-            onClick={(e) => {
-              e.preventDefault();
-              setActiveTab('cool-stuff');
-            }}
-          >
-            Cool Stuff
-          </a>
-          <a 
-            href="#personal" 
-            className={`nav-link ${activeTab === 'personal' ? 'active' : ''}`}
-            onClick={(e) => {
-              e.preventDefault();
-              setActiveTab('personal');
-            }}
-          >
-            Personal
-          </a>
-        </div>
-        <div className="nav-actions">
-          <button className="theme-toggle" onClick={toggleTheme}>
-            <i className={`fas ${isDarkMode ? 'fa-sun' : 'fa-moon'}`}></i>
+            {item}
           </button>
-        <button className="contact-button">Get in Touch</button>
-        </div>
+        ))}
       </nav>
 
-      <div className="main-content">
-        {activeTab === 'home' && (
-          <>
-            <div className="hero-section">
-              <h1 className="hero-title">Abhiraj Kane</h1>
-              <p className="hero-subtitle">Salesforce Integration Consultant</p>
-              <div className="contact-info">
-                <div className="contact-item">
-                  <i className="fas fa-envelope"></i>
-                  <span>abhirajkane@gmail.com</span>
-                </div>
-                <div className="contact-item">
-                  <i className="fas fa-phone"></i>
-                  <span>+44 (0)7957365499</span>
-                </div>
-                <div className="contact-item">
-                  <i className="fas fa-map-marker-alt"></i>
-                  <span>Ruislip, UK</span>
-                </div>
-              </div>
-              <div className="social-links">
-                <a href={socialLinks.github} target="_blank" rel="noopener noreferrer" className="social-icon">
-                  <i className="fab fa-github"></i>
-                </a>
-                <a href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="social-icon">
-                  <i className="fab fa-linkedin"></i>
-                </a>
-                <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="social-icon">
-                  <i className="fab fa-twitter"></i>
-                </a>
-                <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="social-icon">
-                  <i className="fab fa-instagram"></i>
-                </a>
-              </div>
+      {/* Hero Section */}
+      <section id="hero" className="hero-section">
+        <div className="hero-content">
+          <div className="hero-badge animate-on-scroll">
+            <span className="badge-dot"></span>
+            Available for opportunities
+          </div>
+          <h1 className="hero-title animate-on-scroll">
+            <span className="title-line">Hi, I'm</span>
+            <span className="title-name gradient-text">{profile.name}</span>
+          </h1>
+          <p className="hero-subtitle animate-on-scroll">
+            {typedText || '\u00A0'}
+          </p>
+          <p className="hero-description animate-on-scroll">{profile.tagline}</p>
+          
+          <div className="hero-cta animate-on-scroll">
+            <button className="btn-primary glow-effect" onClick={() => scrollToSection('projects')}>
+              <span className="btn-text">View My Work</span>
+              <span className="btn-arrow">→</span>
+            </button>
+            <button className="btn-secondary" onClick={() => scrollToSection('contact')}>
+              Get In Touch
+            </button>
+          </div>
+
+          <div className="hero-stats animate-on-scroll">
+            <div className="stat-item">
+              <span className="stat-number">
+                <AnimatedCounter end={5} suffix="+" />
+              </span>
+              <span className="stat-label">Years Experience</span>
             </div>
-
-            <div className="profile-section">
-              <h2>Professional Profile</h2>
-              <p className="profile-description">
-                A motivated Consultant with a strong track record of delivering scalable, enterprise-grade integration solutions across the EMEA region. Experienced in API-led connectivity, cloud platforms, DevOps best practices, and digital transformation strategy. Proven ability to lead cross-functional teams, manage full API lifecycles, and support complex system migrations. Strong communicator and collaborator, committed to delivering value-driven outcomes and long-term client success.
-              </p>
+            <div className="stat-divider"></div>
+            <div className="stat-item">
+              <span className="stat-number">
+                <AnimatedCounter end={5} />
+              </span>
+              <span className="stat-label">Certifications</span>
             </div>
-
-            <div className="education-section">
-              <h2>Education</h2>
-              <div className="education-grid">
-                <div className="education-item">
-                  <h3>University College London (UCL)</h3>
-                  <p className="degree">MSc Technology Management</p>
-                  <p className="duration">2024–2026, Predicted Distinction</p>
-                </div>
-                <div className="education-item">
-                  <h3>Royal Holloway, University of London</h3>
-                  <p className="degree">BSc Computer Science with Artificial Intelligence</p>
-                  <p className="duration">2019–2022, First Class Honours</p>
-                </div>
-              </div>
+            <div className="stat-divider"></div>
+            <div className="stat-item">
+              <span className="stat-number">
+                <AnimatedCounter end={10} suffix="+" />
+              </span>
+              <span className="stat-label">Projects Delivered</span>
             </div>
-
-            <div className="experience-section">
-              <h2>Professional Experience</h2>
-              <div className="experience-timeline">
-                <div className="experience-item">
-                  <div className="experience-header">
-                    <h3>Salesforce Integration Consultant</h3>
-                    <span className="duration">Sep 2022 – Present</span>
-                  </div>
-                  <ul className="experience-details">
-                    <li>Lead design, development, and deployment of scalable MuleSoft integration solutions across EMEA</li>
-                    <li>Delivered API-led connectivity solutions modernising legacy systems</li>
-                    <li>Managed full integration lifecycle and large-scale data migrations across Salesforce and SAP</li>
-                    <li>Conducted technical workshops, mentored client teams, and supported pre-sales initiatives</li>
-                  </ul>
-                    </div>
-                <div className="experience-item">
-                  <div className="experience-header">
-                    <h3>MuleSoft Technical Consultant Intern</h3>
-                    <span className="duration">Jun 2021 – Aug 2021</span>
-                    </div>
-                  <ul className="experience-details">
-                    <li>Created APIs following the full development lifecycle</li>
-                    <li>Automated CloudHub infrastructure maintenance and resource creation</li>
-                    <li>Collaborated with MuleSoft architects and consultants</li>
-                  </ul>
-                    </div>
-                <div className="experience-item">
-                  <div className="experience-header">
-                    <h3>Tata Consultancy Services Placement</h3>
-                    <span className="duration">2017/2018</span>
-                  </div>
-                  <ul className="experience-details">
-                    <li>Shadowed consultants delivering global technology solutions</li>
-                    <li>Learned client relationship management and scalable solution design</li>
-                    <li>Built understanding of emerging technologies across industries</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            <div className="certifications-section">
-              <h2>Certifications</h2>
-              <div className="certifications-grid">
-                <div className="cert-item">MuleSoft Certified Developer – Level 1</div>
-                <div className="cert-item">Salesforce Certified AI Associate</div>
-                <div className="cert-item">Salesforce Trailhead Ranger</div>
-                <div className="cert-item">AWS Cloud Computing Fundamentals</div>
-              </div>
-            </div>
-
-            <div className="skills-section">
-              <h2>Technical Skills</h2>
-              <div className="skills-grid">
-                <div className="skill-category">
-                  <h3>Integration</h3>
-                  <p>MuleSoft, RAML, SOAP, DataWeave, Anypoint Platform, Maven</p>
-                </div>
-                <div className="skill-category">
-                  <h3>DevOps</h3>
-                  <p>Git, GitHub Actions, Pipelines, CI/CD</p>
-                </div>
-                <div className="skill-category">
-                  <h3>Software Development</h3>
-                  <p>Java, C#, Python, C, Visual Basic, Pascal</p>
-                </div>
-                <div className="skill-category">
-                  <h3>Web Development</h3>
-                  <p>HTML, CSS, JavaScript, Flask</p>
-                </div>
-                <div className="skill-category">
-                  <h3>Databases</h3>
-                  <p>SQL (MySQL, PostgreSQL), SOQL</p>
-                </div>
-                <div className="skill-category">
-                  <h3>Methodologies</h3>
-                  <p>Agile, Scrum, TDD</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="volunteering-section">
-              <h2>Volunteering & Leadership</h2>
-              <div className="volunteering-grid">
-                <div className="volunteer-item">Duke of Edinburgh Gold Award</div>
-                <div className="volunteer-item">RAF Air Cadets contributor (first aid, expedition, leadership activities)</div>
-                <div className="volunteer-item">Sports Leaders Award Level 1</div>
-                <div className="volunteer-item">Classroom assistant at Castleview Primary School</div>
-              </div>
-                      </div>
-
-            <div className="interests-section">
-              <h2>Interests & Activities</h2>
-              <div className="interests-grid">
-                <div className="interest-item">Web & App Development (MVPs for startups)</div>
-                <div className="interest-item">Fitness & Gym (currently completing fitness training course)</div>
-                <div className="interest-item">Drums (Grade 6, performed across UK)</div>
-                <div className="interest-item">Finance & Investment (member of university society)</div>
-                <div className="interest-item">Swimming (Level 8, completed 5K Swimathon)</div>
-                      </div>
-                    </div>
-
-            <div className="languages-section">
-              <h2>Languages</h2>
-              <div className="languages-grid">
-                <div className="language-item">
-                  <span className="language-name">English</span>
-                  <span className="language-level">Fluent</span>
-                </div>
-                <div className="language-item">
-                  <span className="language-name">Hindi</span>
-                  <span className="language-level">Professional proficiency</span>
-                </div>
-                <div className="language-item">
-                  <span className="language-name">Marathi</span>
-                  <span className="language-level">Professional proficiency</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="cta-section">
-              <h2>Let's Work Together</h2>
-              <p>Interested in collaborating or have a project in mind?</p>
-              <button className="cta-button">Get In Touch</button>
-            </div>
-          </>
-        )}
-
-        <div className="tab-content">
-          {activeTab === 'countries' && (
-            <div className="countries-section">
-              <div className="countries-header">
-                <h2>Interactive Travel Map</h2>
-                <p className="countries-subtitle">Explore my journey around the world</p>
-                <div className="countries-counter">
-                  <span className="counter-number">{visitedCountries.length}</span>
-                  <span className="counter-label">Countries Visited</span>
-                </div>
-              </div>
-              
-              <div className="globe-section">
-                <InteractiveGlobe 
-                  onCountryClick={handleGlobeCountryClick}
-                  selectedCountry={selectedCountry}
-                  visitedCountries={visitedCountries}
-                  onAddPin={handleAddPin}
-                />
-                <AdminPanel
-                  isAdmin={isAdmin}
-                  onToggleAdmin={toggleAdmin}
-                  onAddPin={handleAddPin}
-                  onRemovePin={handleRemovePin}
-                  visitedCountries={visitedCountries}
-                />
-                          </div>
-              
-              <div className="country-explorer">
-                <CountryDropdown
-                  selectedCountry={selectedCountry}
-                  onCountrySelect={handleCountrySelect}
-                  visitedCountries={visitedCountries}
-                  countryPhotos={countryPhotos}
-                />
-                
-                {selectedCountry && (
-                  <PhotoGallery
-                    country={selectedCountry}
-                    photos={countryPhotos[selectedCountry] || []}
-                  />
-                )}
-                
-                {selectedCountry && (
-                  <PhotoManager
-                    country={selectedCountry}
-                    onPhotosUpdate={handlePhotosUpdate}
-                  />
-                )}
-                      </div>
-              
-              <div className="countries-stats">
-                <div className="stat-card">
-                  <i className="fas fa-globe-americas"></i>
-                  <h4>Countries</h4>
-                  <span>{visitedCountries.length}</span>
-                </div>
-                <div className="stat-card">
-                  <i className="fas fa-camera"></i>
-                  <h4>Photos</h4>
-                  <span>{Object.values(countryPhotos).reduce((total, photos) => total + photos.length, 0)}</span>
-                </div>
-                <div className="stat-card">
-                  <i className="fas fa-map-pin"></i>
-                  <h4>Pins</h4>
-                  <span>{visitedCountries.length}</span>
-                </div>
-                <div className="stat-card">
-                  <i className="fas fa-heart"></i>
-                  <h4>Memories</h4>
-                  <span>∞</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'cool-stuff' && (
-            <div className="cool-stuff-section">
-              <FlappyBird />
-            </div>
-          )}
-
-          {activeTab === 'personal' && <Personal />}
+          </div>
         </div>
-        
-        {/* Data Manager - Available on all pages */}
-        <DataManager onDataChange={() => window.location.reload()} />
-      </div>
+
+        <div className="hero-visual">
+          <div className="code-window glass animate-on-scroll">
+            <div className="window-header">
+              <div className="window-dots">
+                <span className="dot red"></span>
+                <span className="dot yellow"></span>
+                <span className="dot green"></span>
+              </div>
+              <span className="window-title">abhiraj.py</span>
+            </div>
+            <pre className="code-content">
+              <code>
+{`class SoftwareEngineer:
+    def __init__(self):
+        self.name = "Abhiraj Kane"
+        self.role = "AI Solutions Architect"
+        self.skills = ["AI/ML", "Integration", 
+                       "Full-Stack Dev"]
+    
+    def build_solution(self, problem):
+        return self.innovate(problem)
+    
+    def current_focus(self):
+        return ["LLM Engineering",
+                "Agent Architecture",
+                "Enterprise AI"]`}
+              </code>
+            </pre>
+          </div>
+        </div>
+
+        <div className="scroll-indicator" onClick={() => scrollToSection('about')}>
+          <div className="mouse">
+            <div className="mouse-wheel"></div>
+          </div>
+          <span className="scroll-text">Scroll to explore</span>
+        </div>
+      </section>
+
+      {/* About Section */}
+      <section id="about" className="section about-section">
+        <div className="section-header animate-on-scroll">
+          <span className="section-tag">About Me</span>
+          <h2 className="section-title">Building the Future with <span className="gradient-text">AI & Integration</span></h2>
+        </div>
+
+        <div className="about-content">
+          <div className="about-text animate-on-scroll">
+            <p className="about-lead">
+              A motivated Software Engineer and Technical Consultant building enterprise systems 
+              and applied AI solutions. I bridge the gap between cutting-edge AI capabilities 
+              and enterprise-grade production systems.
+            </p>
+            <p>
+              With experience designing APIs, integrating complex platforms like Salesforce and SAP, 
+              and delivering production systems within enterprise environments, I bring a unique 
+              perspective to AI engineering—one grounded in scalability, reliability, and real-world impact.
+            </p>
+            <p>
+              Currently focused on LLM engineering, multi-agent AI systems, and RAG architectures 
+              that transform how enterprises operate.
+            </p>
+          </div>
+
+          <div className="education-cards animate-on-scroll">
+            {education.map((edu, index) => (
+              <div key={index} className="edu-card glass" style={{ animationDelay: `${index * 0.1}s` }}>
+                <div className="edu-icon">🎓</div>
+                <div className="edu-content">
+                  <h4>{edu.school}</h4>
+                  <p className="edu-degree">{edu.degree}</p>
+                  <div className="edu-meta">
+                    <span>{edu.period}</span>
+                    <span className="edu-grade">{edu.grade}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Skills Section */}
+      <section id="skills" className="section skills-section">
+        <div className="section-header animate-on-scroll">
+          <span className="section-tag">Expertise</span>
+          <h2 className="section-title">Skills & <span className="gradient-text">Technologies</span></h2>
+        </div>
+
+        <div className="skills-grid">
+          {Object.entries(skills).map(([category, skillList], categoryIndex) => (
+            <div 
+              key={category} 
+              className="skill-category animate-on-scroll glass"
+              style={{ animationDelay: `${categoryIndex * 0.1}s` }}
+            >
+              <h3 className="category-title">
+                {category === 'ai' && '🤖 AI & LLM Engineering'}
+                {category === 'integration' && '🔗 MuleSoft & Integration'}
+                {category === 'development' && '💻 Software Development'}
+                {category === 'databases' && '🗄️ Databases'}
+                {category === 'devops' && '⚙️ DevOps'}
+                {category === 'methodologies' && '📋 Methodologies'}
+              </h3>
+              <div className="skill-tags">
+                {skillList.map((skill, index) => (
+                  <span 
+                    key={index} 
+                    className="skill-tag"
+                    style={{ animationDelay: `${(categoryIndex * 0.1) + (index * 0.05)}s` }}
+                  >
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Certifications */}
+        <div className="certifications animate-on-scroll">
+          <h3 className="cert-title">Certifications</h3>
+          <div className="cert-grid">
+            {certifications.map((cert, index) => (
+              <div 
+                key={index} 
+                className="cert-badge glass"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <span className="cert-icon">{cert.icon}</span>
+                <span className="cert-name">{cert.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Experience Section */}
+      <section id="experience" className="section experience-section">
+        <div className="section-header animate-on-scroll">
+          <span className="section-tag">Career</span>
+          <h2 className="section-title">Professional <span className="gradient-text">Experience</span></h2>
+        </div>
+
+        <div className="timeline">
+          {experience.map((exp, index) => (
+            <div 
+              key={index} 
+              className="timeline-item animate-on-scroll"
+              style={{ animationDelay: `${index * 0.15}s` }}
+            >
+              <div className="timeline-marker">
+                <div className="marker-dot"></div>
+                {index < experience.length - 1 && <div className="marker-line"></div>}
+              </div>
+              <div className="timeline-content glass">
+                <div className="exp-header">
+                  <div>
+                    <h3 className="exp-title">{exp.title}</h3>
+                    <p className="exp-company">{exp.company}</p>
+                  </div>
+                  <span className="exp-period">{exp.period}</span>
+                </div>
+                <ul className="exp-highlights">
+                  {exp.highlights.map((highlight, i) => (
+                    <li key={i}>{highlight}</li>
+                  ))}
+                </ul>
+                <div className="exp-tags">
+                  {exp.tags.map((tag, i) => (
+                    <span key={i} className="tag">{tag}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Projects Section */}
+      <section id="projects" className="section projects-section">
+        <div className="section-header animate-on-scroll">
+          <span className="section-tag">Portfolio</span>
+          <h2 className="section-title">Featured <span className="gradient-text">Projects</span></h2>
+        </div>
+
+        <div className="projects-grid">
+          {projects.map((project, index) => (
+            <div key={index} className="project-card animate-on-scroll glass">
+              <div className="project-glow"></div>
+              <div className="project-header">
+                <div className="project-icon">🚀</div>
+                <div className="project-links">
+                  <a href={`https://${project.url}`} target="_blank" rel="noopener noreferrer" className="project-link">
+                    Visit Site ↗
+                  </a>
+                </div>
+              </div>
+              <h3 className="project-name">{project.name}</h3>
+              <p className="project-period">{project.period}</p>
+              <p className="project-desc">{project.description}</p>
+              <ul className="project-features">
+                {project.features.map((feature, i) => (
+                  <li key={i}>{feature}</li>
+                ))}
+              </ul>
+              <div className="project-tags">
+                {project.tags.map((tag, i) => (
+                  <span key={i} className="tag">{tag}</span>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {/* More projects placeholder */}
+          <div className="project-card coming-soon animate-on-scroll glass">
+            <div className="coming-soon-content">
+              <span className="coming-icon">✨</span>
+              <h3>More Projects</h3>
+              <p>New AI-powered projects coming soon...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section id="contact" className="section contact-section">
+        <div className="contact-content animate-on-scroll">
+          <span className="section-tag">Get In Touch</span>
+          <h2 className="contact-title">Let's Build Something <span className="gradient-text">Amazing</span></h2>
+          <p className="contact-desc">
+            Interested in AI solutions, enterprise integration, or just want to chat about technology? 
+            I'm always open to discussing new projects and opportunities.
+          </p>
+          
+          <div className="contact-methods">
+            <a href={`mailto:${profile.email}`} className="contact-card glass">
+              <span className="contact-icon">📧</span>
+              <span className="contact-label">Email</span>
+              <span className="contact-value">{profile.email}</span>
+            </a>
+            <a href={profile.linkedin} target="_blank" rel="noopener noreferrer" className="contact-card glass">
+              <span className="contact-icon">💼</span>
+              <span className="contact-label">LinkedIn</span>
+              <span className="contact-value">Connect with me</span>
+            </a>
+            <a href={profile.github} target="_blank" rel="noopener noreferrer" className="contact-card glass">
+              <span className="contact-icon">🐙</span>
+              <span className="contact-label">GitHub</span>
+              <span className="contact-value">View my code</span>
+            </a>
+          </div>
+
+          <div className="contact-cta">
+            <p className="cta-text">Ready to start a project?</p>
+            <a href={`mailto:${profile.email}`} className="cta-button">
+              <span className="cta-icon">✉️</span>
+              <span className="cta-label">Send me a message</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="footer">
+        <div className="footer-content">
+          <p>© 2026 Abhiraj Kane. Built with React & passion.</p>
+          <p className="footer-tagline">Software Engineer • AI Architect • Problem Solver</p>
+        </div>
+      </footer>
     </div>
   );
 }
@@ -663,15 +617,8 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Valentine's Day Proposal Page - Special route for Riya 💖 */}
         <Route path="/valentines" element={<Valentine />} />
-        
-        {/* Main website with theme provider */}
-        <Route path="/*" element={
-          <ThemeProvider>
-            <AppContent />
-          </ThemeProvider>
-        } />
+        <Route path="/*" element={<AppContent />} />
       </Routes>
     </Router>
   );
