@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import Valentine from './components/Valentine';
+import PrivatePortal from './components/mealprep/PrivatePortal';
+import MealPrepDashboard from './components/mealprep/MealPrepDashboard';
 
 // Animated Counter Component - defined outside to prevent re-renders
 function AnimatedCounter({ end, duration = 2000, suffix = '' }) {
@@ -618,6 +620,14 @@ function App() {
     <Router>
       <Routes>
         <Route path="/valentines" element={<Valentine />} />
+        <Route 
+          path="/portal/*" 
+          element={
+            <PrivatePortal>
+              <MealPrepDashboard />
+            </PrivatePortal>
+          } 
+        />
         <Route path="/*" element={<AppContent />} />
       </Routes>
     </Router>
