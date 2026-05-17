@@ -1,5 +1,12 @@
 import { useState, useMemo } from 'react';
 import { ingredientsService } from '../../services/mealPrepDataService';
+import { 
+  SearchIcon, 
+  XIcon, 
+  PlusIcon, 
+  ChevronLeftIcon,
+  AlertIcon
+} from './Icons';
 
 const INGREDIENT_DATABASE = {
   Proteins: [
@@ -17,7 +24,7 @@ const INGREDIENT_DATABASE = {
   ],
   Dairy: [
     'Milk', 'Butter', 'Cheese', 'Cheddar', 'Mozzarella', 'Parmesan', 'Cream',
-    'Yogurt', 'Greek Yogurt', 'Sour Cream', 'Cream Cheese', 'Eggs'
+    'Yogurt', 'Greek Yogurt', 'Sour Cream', 'Cream Cheese'
   ],
   Grains: [
     'Rice', 'Brown Rice', 'Pasta', 'Bread', 'Flour', 'Oats', 'Quinoa',
@@ -85,7 +92,7 @@ function ManualIngredientEntry({ userId, onClose, existingIngredients }) {
     [existingNames, selectedItems]
   );
 
-  const addItem = (item, category = 'Other') => {
+  const addItem = (item) => {
     if (!selectedItems.includes(item)) {
       setSelectedItems(prev => [...prev, item]);
     }
@@ -99,7 +106,7 @@ function ManualIngredientEntry({ userId, onClose, existingIngredients }) {
     const trimmed = customItem.trim();
     if (!trimmed) return;
     if (existingNames.has(trimmed.toLowerCase())) {
-      setError('This ingredient is already in your list');
+      setError('This ingredient is already in your pantry');
       return;
     }
     if (selectedItems.map(i => i.toLowerCase()).includes(trimmed.toLowerCase())) {
@@ -152,163 +159,189 @@ function ManualIngredientEntry({ userId, onClose, existingIngredients }) {
   const categories = Object.keys(INGREDIENT_DATABASE);
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content manual-entry-modal" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>✏️ Add Ingredients</h2>
-          <button className="close-button" onClick={onClose}>×</button>
-        </div>
-
-        {error && (
-          <div className="modal-error">
-            <span>⚠️</span> {error}
+    <div className="mp-portal">
+      <div className="mp-modal-overlay" onClick={onClose}>
+        <div className="mp-modal" onClick={e => e.stopPropagation()}>
+          <div className="mp-modal-header">
+            <h2 className="mp-modal-title">Add ingredients</h2>
+            <button className="mp-icon-btn" onClick={onClose} aria-label="Close">
+              <XIcon size={18} />
+            </button>
           </div>
-        )}
 
-        <div className="search-section">
-          <div className="search-input-wrapper">
-            <span className="search-icon">🔍</span>
-            <input
-              type="text"
-              placeholder="Search ingredients..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
-            />
-            {searchQuery && (
-              <button 
-                className="clear-search"
-                onClick={() => setSearchQuery('')}
-              >
-                ×
-              </button>
-            )}
-          </div>
-        </div>
-
-        {!searchQuery && !selectedCategory && (
-          <>
-            <div className="quick-add-section">
-              <h3>Quick Add</h3>
-              <div className="quick-add-chips">
-                {quickAddItems.slice(0, 8).map(item => (
-                  <button
-                    key={item}
-                    className="quick-chip"
-                    onClick={() => addItem(item)}
-                  >
-                    + {item}
-                  </button>
-                ))}
+          <div className="mp-modal-body">
+            {error && (
+              <div className="mp-alert">
+                <AlertIcon size={16} />
+                <span>{error}</span>
               </div>
+            )}
+
+            <div className="mp-search-wrapper">
+              <SearchIcon size={16} className="mp-search-icon" />
+              <input
+                type="text"
+                className="mp-input mp-search"
+                placeholder="Search ingredients..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button 
+                  className="mp-search-clear"
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Clear search"
+                >
+                  <XIcon size={14} />
+                </button>
+              )}
             </div>
 
-            <div className="category-section">
-              <h3>Browse by Category</h3>
-              <div className="category-buttons">
-                {categories.map(category => (
-                  <button
-                    key={category}
-                    className="category-button"
-                    onClick={() => setSelectedCategory(category)}
-                  >
-                    {category === 'Proteins' && '🥩'}
-                    {category === 'Vegetables' && '🥬'}
-                    {category === 'Fruits' && '🍎'}
-                    {category === 'Dairy' && '🧀'}
-                    {category === 'Grains' && '🌾'}
-                    {category === 'Pantry' && '🥫'}
-                    {category === 'Spices' && '🧂'}
-                    <span>{category}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
+            {!searchQuery && !selectedCategory && (
+              <>
+                {quickAddItems.length > 0 && (
+                  <div>
+                    <h3 className="mp-section-title" style={{ marginBottom: '10px' }}>
+                      Quick add
+                    </h3>
+                    <div className="mp-chips">
+                      {quickAddItems.slice(0, 8).map(item => (
+                        <button
+                          key={item}
+                          className="mp-chip mp-chip-add"
+                          onClick={() => addItem(item)}
+                        >
+                          <PlusIcon size={12} />
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-        {(searchQuery || selectedCategory) && (
-          <div className="results-section">
-            {selectedCategory && (
-              <button 
-                className="back-button"
-                onClick={() => setSelectedCategory(null)}
-              >
-                ← Back to Categories
-              </button>
-            )}
-            
-            {Object.entries(filteredIngredients).length === 0 ? (
-              <div className="no-results">
-                <p>No matching ingredients found</p>
-              </div>
-            ) : (
-              Object.entries(filteredIngredients).map(([category, items]) => (
-                <div key={category} className="result-category">
-                  <h4>{category}</h4>
-                  <div className="result-items">
-                    {items.map(item => (
+                <div>
+                  <h3 className="mp-section-title" style={{ marginBottom: '10px' }}>
+                    Categories
+                  </h3>
+                  <div className="mp-category-grid">
+                    {categories.map(category => (
                       <button
-                        key={item}
-                        className="result-item"
-                        onClick={() => addItem(item, category)}
+                        key={category}
+                        className="mp-category-btn"
+                        onClick={() => setSelectedCategory(category)}
                       >
-                        + {item}
+                        {category}
                       </button>
                     ))}
                   </div>
                 </div>
-              ))
+              </>
+            )}
+
+            {(searchQuery || selectedCategory) && (
+              <div>
+                {selectedCategory && (
+                  <button 
+                    className="mp-back-btn"
+                    onClick={() => setSelectedCategory(null)}
+                  >
+                    <ChevronLeftIcon size={14} />
+                    Back to categories
+                  </button>
+                )}
+                
+                {Object.entries(filteredIngredients).length === 0 ? (
+                  <div className="mp-empty" style={{ padding: '32px 20px' }}>
+                    <p>No matching ingredients found</p>
+                  </div>
+                ) : (
+                  Object.entries(filteredIngredients).map(([category, items]) => (
+                    <div key={category} className="mp-result-group">
+                      <h4 className="mp-result-group-title">{category}</h4>
+                      <div className="mp-chips">
+                        {items.map(item => (
+                          <button
+                            key={item}
+                            className="mp-chip mp-chip-add"
+                            onClick={() => addItem(item)}
+                          >
+                            <PlusIcon size={12} />
+                            {item}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            <div>
+              <h3 className="mp-section-title" style={{ marginBottom: '10px' }}>
+                Add custom
+              </h3>
+              <div className="mp-custom-add">
+                <input
+                  type="text"
+                  className="mp-input"
+                  placeholder="Type ingredient name..."
+                  value={customItem}
+                  onChange={(e) => setCustomItem(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addCustomItem()}
+                />
+                <button 
+                  className="mp-btn mp-btn-secondary"
+                  onClick={addCustomItem}
+                  disabled={!customItem.trim()}
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+
+            {selectedItems.length > 0 && (
+              <div className="mp-selected-tray">
+                <div className="mp-selected-tray-header">
+                  <span className="mp-selected-tray-title">Selected</span>
+                  <span className="mp-selected-tray-count">{selectedItems.length}</span>
+                </div>
+                <div className="mp-chips">
+                  {selectedItems.map(item => (
+                    <span key={item} className="mp-chip mp-chip-selected">
+                      {item}
+                      <button 
+                        className="mp-chip-remove"
+                        onClick={() => removeItem(item)}
+                        aria-label={`Remove ${item}`}
+                      >
+                        <XIcon size={10} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
-        )}
 
-        <div className="custom-add-section">
-          <h3>Add Custom</h3>
-          <div className="custom-input-wrapper">
-            <input
-              type="text"
-              placeholder="Type ingredient name..."
-              value={customItem}
-              onChange={(e) => setCustomItem(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && addCustomItem()}
-              className="custom-input"
-            />
+          <div className="mp-modal-footer">
+            <button className="mp-btn mp-btn-secondary" onClick={onClose}>
+              Cancel
+            </button>
             <button 
-              className="custom-add-button"
-              onClick={addCustomItem}
-              disabled={!customItem.trim()}
+              className="mp-btn mp-btn-primary"
+              onClick={handleSave}
+              disabled={loading || selectedItems.length === 0}
             >
-              Add
+              {loading ? (
+                <>
+                  <span className="mp-spinner"></span>
+                  Adding
+                </>
+              ) : (
+                `Add ${selectedItems.length || ''} ${selectedItems.length === 1 ? 'item' : 'items'}`.trim()
+              )}
             </button>
           </div>
-        </div>
-
-        {selectedItems.length > 0 && (
-          <div className="selected-section">
-            <h3>Selected ({selectedItems.length})</h3>
-            <div className="selected-chips">
-              {selectedItems.map(item => (
-                <span key={item} className="selected-chip">
-                  {item}
-                  <button onClick={() => removeItem(item)}>×</button>
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="modal-footer">
-          <button className="cancel-button" onClick={onClose}>
-            Cancel
-          </button>
-          <button 
-            className="save-button"
-            onClick={handleSave}
-            disabled={loading || selectedItems.length === 0}
-          >
-            {loading ? 'Adding...' : `Add ${selectedItems.length} Item${selectedItems.length !== 1 ? 's' : ''}`}
-          </button>
         </div>
       </div>
     </div>

@@ -1,6 +1,14 @@
 import { useState, useRef } from 'react';
 import { extractIngredientsFromImage } from '../../services/aiService';
 import { ingredientsService } from '../../services/mealPrepDataService';
+import { 
+  CameraIcon, 
+  XIcon, 
+  CheckIcon, 
+  SparklesIcon, 
+  RefreshIcon,
+  AlertIcon
+} from './Icons';
 
 function PhotoIngredientCapture({ userId, onClose, existingIngredients }) {
   const [imagePreview, setImagePreview] = useState(null);
@@ -47,7 +55,7 @@ function PhotoIngredientCapture({ userId, onClose, existingIngredients }) {
       );
 
       if (newIngredients.length === 0 && ingredients.length > 0) {
-        setError('All detected ingredients are already in your list');
+        setError('All detected ingredients are already in your pantry');
       }
 
       setDetectedIngredients(newIngredients.map(i => ({ ...i, selected: true })));
@@ -106,127 +114,162 @@ function PhotoIngredientCapture({ userId, onClose, existingIngredients }) {
     setError('');
   };
 
+  const selectedCount = detectedIngredients.filter(i => i.selected).length;
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content photo-capture-modal" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>{step === 'capture' ? '📸 Scan Ingredients' : '✅ Review Ingredients'}</h2>
-          <button className="close-button" onClick={onClose}>×</button>
-        </div>
-
-        {error && (
-          <div className="modal-error">
-            <span>⚠️</span> {error}
+    <div className="mp-portal">
+      <div className="mp-modal-overlay" onClick={onClose}>
+        <div className="mp-modal" onClick={e => e.stopPropagation()}>
+          <div className="mp-modal-header">
+            <h2 className="mp-modal-title">
+              {step === 'capture' ? 'Scan ingredients' : 'Review detection'}
+            </h2>
+            <button className="mp-icon-btn" onClick={onClose} aria-label="Close">
+              <XIcon size={18} />
+            </button>
           </div>
-        )}
 
-        {step === 'capture' && (
-          <div className="capture-content">
-            {!imagePreview ? (
-              <div className="capture-zone">
+          <div className="mp-modal-body">
+            {error && (
+              <div className="mp-alert">
+                <AlertIcon size={16} />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {step === 'capture' && !imagePreview && (
+              <div className="mp-capture-zone">
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   capture="environment"
                   onChange={handleFileSelect}
-                  className="file-input"
+                  className="mp-file-input"
                 />
                 <div 
-                  className="capture-placeholder"
+                  className="mp-capture-target"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <span className="capture-icon">📷</span>
-                  <p>Tap to take a photo or select an image</p>
-                  <span className="capture-hint">Show your fridge, pantry, or ingredients</span>
+                  <div className="mp-capture-icon">
+                    <CameraIcon size={22} />
+                  </div>
+                  <h4>Take or upload a photo</h4>
+                  <p>Show your fridge, pantry, or ingredients</p>
                 </div>
               </div>
-            ) : (
-              <div className="image-preview">
+            )}
+
+            {step === 'capture' && imagePreview && (
+              <div className="mp-image-preview">
                 <img src={imagePreview} alt="Captured" />
-                <div className="preview-actions">
-                  <button className="retake-button" onClick={handleRetake}>
-                    🔄 Retake
+                <div className="mp-image-preview-actions">
+                  <button className="mp-btn mp-btn-secondary" onClick={handleRetake}>
+                    <RefreshIcon size={14} />
+                    Retake
                   </button>
                   <button 
-                    className="analyze-button" 
+                    className="mp-btn mp-btn-primary"
                     onClick={handleAnalyze}
                     disabled={loading}
                   >
                     {loading ? (
                       <>
-                        <span className="button-spinner"></span>
-                        Analyzing...
+                        <span className="mp-spinner"></span>
+                        Analyzing
                       </>
                     ) : (
-                      <>✨ Detect Ingredients</>
+                      <>
+                        <SparklesIcon size={14} />
+                        Detect ingredients
+                      </>
                     )}
                   </button>
                 </div>
               </div>
             )}
-          </div>
-        )}
 
-        {step === 'review' && (
-          <div className="review-content">
-            {detectedIngredients.length === 0 ? (
-              <div className="empty-state">
-                <span className="empty-icon">🤔</span>
-                <p>No new ingredients detected</p>
-                <button className="retake-button" onClick={handleRetake}>
-                  Try Another Photo
-                </button>
-              </div>
-            ) : (
+            {step === 'review' && (
               <>
-                <p className="review-hint">
-                  Tap to edit, swipe to remove. Uncheck items you don't want to add.
-                </p>
-                <div className="detected-list">
-                  {detectedIngredients.map(ingredient => (
-                    <div 
-                      key={ingredient.id} 
-                      className={`detected-item ${ingredient.selected ? 'selected' : ''}`}
-                    >
-                      <button 
-                        className="item-checkbox"
-                        onClick={() => toggleIngredient(ingredient.id)}
-                      >
-                        {ingredient.selected ? '✓' : ''}
-                      </button>
-                      <input
-                        type="text"
-                        value={ingredient.name}
-                        onChange={(e) => updateIngredientName(ingredient.id, e.target.value)}
-                        className="item-name"
-                      />
-                      <span className="item-category">{ingredient.category}</span>
-                      <button 
-                        className="item-remove"
-                        onClick={() => removeIngredient(ingredient.id)}
-                      >
-                        ×
-                      </button>
+                {detectedIngredients.length === 0 ? (
+                  <div className="mp-empty" style={{ padding: '32px 20px' }}>
+                    <h3>No new ingredients</h3>
+                    <p>Try a different photo with clearer ingredients</p>
+                    <button className="mp-btn mp-btn-secondary" onClick={handleRetake} style={{ marginTop: '8px' }}>
+                      <RefreshIcon size={14} />
+                      Try again
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <p className="mp-text-secondary" style={{ margin: 0 }}>
+                      Tap to edit names. Uncheck items to skip them.
+                    </p>
+                    <div className="mp-detected-list">
+                      {detectedIngredients.map(ingredient => (
+                        <div 
+                          key={ingredient.id} 
+                          className={`mp-detected-item ${!ingredient.selected ? 'unselected' : ''}`}
+                        >
+                          <button 
+                            className={`mp-checkbox ${ingredient.selected ? 'checked' : ''}`}
+                            onClick={() => toggleIngredient(ingredient.id)}
+                            aria-label={ingredient.selected ? 'Deselect' : 'Select'}
+                          >
+                            {ingredient.selected && <CheckIcon size={12} />}
+                          </button>
+                          <input
+                            type="text"
+                            className="mp-input"
+                            value={ingredient.name}
+                            onChange={(e) => updateIngredientName(ingredient.id, e.target.value)}
+                          />
+                          <span className="mp-badge">{ingredient.category}</span>
+                          <button 
+                            className="mp-icon-btn danger"
+                            onClick={() => removeIngredient(ingredient.id)}
+                            aria-label="Remove"
+                          >
+                            <XIcon size={14} />
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-                <div className="review-actions">
-                  <button className="retake-button" onClick={handleRetake}>
-                    📷 Scan More
-                  </button>
-                  <button 
-                    className="save-button" 
-                    onClick={handleSave}
-                    disabled={loading || detectedIngredients.filter(i => i.selected).length === 0}
-                  >
-                    {loading ? 'Saving...' : `Add ${detectedIngredients.filter(i => i.selected).length} Items`}
-                  </button>
-                </div>
+                  </>
+                )}
               </>
             )}
           </div>
-        )}
+
+          <div className="mp-modal-footer">
+            {step === 'review' && detectedIngredients.length > 0 ? (
+              <>
+                <button className="mp-btn mp-btn-secondary" onClick={handleRetake}>
+                  <RefreshIcon size={14} />
+                  Scan more
+                </button>
+                <button 
+                  className="mp-btn mp-btn-primary"
+                  onClick={handleSave}
+                  disabled={loading || selectedCount === 0}
+                >
+                  {loading ? (
+                    <>
+                      <span className="mp-spinner"></span>
+                      Adding
+                    </>
+                  ) : (
+                    `Add ${selectedCount} ${selectedCount === 1 ? 'item' : 'items'}`
+                  )}
+                </button>
+              </>
+            ) : (
+              <button className="mp-btn mp-btn-secondary mp-btn-block" onClick={onClose}>
+                Cancel
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

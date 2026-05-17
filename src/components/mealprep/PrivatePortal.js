@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { subscribeToAuthChanges } from '../../services/authService';
 import LoginPage from './LoginPage';
+import './MealPrep.css';
 
 const AuthContext = createContext(null);
 
@@ -27,10 +28,10 @@ function PrivatePortal({ children }) {
 
   if (loading) {
     return (
-      <div className="portal-loading">
-        <div className="portal-loading-content">
-          <div className="portal-spinner"></div>
-          <p>Loading...</p>
+      <div className="mp-portal">
+        <div className="mp-portal-loading">
+          <div className="mp-portal-loading-spinner" />
+          <p>Loading</p>
         </div>
       </div>
     );

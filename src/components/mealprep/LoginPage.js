@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { loginWithEmail } from '../../services/authService';
+import { LockIcon, AlertIcon, XIcon } from './Icons';
 import './MealPrep.css';
 
 function LoginPage() {
@@ -22,48 +23,52 @@ function LoginPage() {
   };
 
   return (
-    <div className="login-page">
-      <div className="login-background">
-        <div className="login-shape login-shape-1"></div>
-        <div className="login-shape login-shape-2"></div>
-        <div className="login-shape login-shape-3"></div>
-      </div>
-      
-      <div className="login-container">
-        <div className="login-card">
-          <div className="login-header">
-            <div className="login-icon">🔐</div>
-            <h1>Private Portal</h1>
-            <p>Sign in to access your meal prep tools</p>
+    <div className="mp-portal">
+      <div className="mp-login">
+        <div className="mp-login-grid" />
+        
+        <div className="mp-login-card">
+          <div className="mp-login-brand">
+            <LockIcon size={20} />
+          </div>
+          
+          <div className="mp-login-header">
+            <h1>Sign in</h1>
+            <p>Access your private workspace</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="login-form">
+          <form onSubmit={handleSubmit} className="mp-login-form">
             {error && (
-              <div className="login-error">
-                <span className="error-icon">⚠️</span>
-                {error}
+              <div className="mp-alert">
+                <AlertIcon size={16} />
+                <span>{error}</span>
+                <button type="button" className="mp-alert-close" onClick={() => setError('')}>
+                  <XIcon size={14} />
+                </button>
               </div>
             )}
 
-            <div className="form-group">
+            <div className="mp-field">
               <label htmlFor="email">Email</label>
               <input
                 type="email"
                 id="email"
+                className="mp-input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
+                placeholder="you@example.com"
                 required
                 autoComplete="email"
                 disabled={loading}
               />
             </div>
 
-            <div className="form-group">
+            <div className="mp-field">
               <label htmlFor="password">Password</label>
               <input
                 type="password"
                 id="password"
+                className="mp-input"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
@@ -75,23 +80,20 @@ function LoginPage() {
 
             <button 
               type="submit" 
-              className="login-button"
+              className="mp-btn mp-btn-primary mp-btn-block mp-btn-lg"
               disabled={loading}
+              style={{ marginTop: '4px' }}
             >
               {loading ? (
                 <>
-                  <span className="button-spinner"></span>
-                  Signing in...
+                  <span className="mp-spinner"></span>
+                  Signing in
                 </>
               ) : (
-                'Sign In'
+                'Continue'
               )}
             </button>
           </form>
-
-          <div className="login-footer">
-            <p>This is a private area.</p>
-          </div>
         </div>
       </div>
     </div>

@@ -7,6 +7,16 @@ import ManualIngredientEntry from './ManualIngredientEntry';
 import IngredientList from './IngredientList';
 import PreferredMealsManager from './PreferredMealsManager';
 import MealSuggestions from './MealSuggestions';
+import { 
+  CameraIcon, 
+  PlusIcon, 
+  SaladIcon, 
+  SparklesIcon, 
+  HeartIcon, 
+  LogoutIcon,
+  AlertIcon,
+  XIcon 
+} from './Icons';
 import './MealPrep.css';
 
 function MealPrepDashboard() {
@@ -53,109 +63,128 @@ function MealPrepDashboard() {
   };
 
   const tabs = [
-    { id: 'ingredients', label: 'Ingredients', icon: '🥬' },
-    { id: 'suggestions', label: 'Suggestions', icon: '✨' },
-    { id: 'favorites', label: 'Favorites', icon: '❤️' },
+    { id: 'ingredients', label: 'Pantry', Icon: SaladIcon },
+    { id: 'suggestions', label: 'Discover', Icon: SparklesIcon },
+    { id: 'favorites', label: 'Saved', Icon: HeartIcon },
   ];
 
+  const titleMap = {
+    ingredients: 'Pantry',
+    suggestions: 'Discover',
+    favorites: 'Saved meals'
+  };
+
   return (
-    <div className="meal-prep-dashboard">
-      <header className="dashboard-header">
-        <div className="header-content">
-          <div className="header-title">
-            <h1>Meal Prep</h1>
-            <span className="ingredient-count">
-              {ingredients.length} ingredient{ingredients.length !== 1 ? 's' : ''}
-            </span>
+    <div className="mp-portal">
+      <div className="mp-dashboard">
+        <header className="mp-header">
+          <div className="mp-header-content">
+            <div className="mp-header-title">
+              <h1>{titleMap[activeTab]}</h1>
+              <span className="mp-header-meta">
+                {activeTab === 'ingredients' && `${ingredients.length} item${ingredients.length !== 1 ? 's' : ''}`}
+                {activeTab === 'favorites' && `${preferredMeals.length} meal${preferredMeals.length !== 1 ? 's' : ''}`}
+                {activeTab === 'suggestions' && 'AI-powered recommendations'}
+              </span>
+            </div>
+            <button 
+              className="mp-btn mp-btn-ghost mp-btn-icon" 
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              title="Sign out"
+              aria-label="Sign out"
+            >
+              <LogoutIcon size={18} />
+            </button>
           </div>
-          <button 
-            className="logout-button" 
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-          >
-            {isLoggingOut ? '...' : '👋'}
-          </button>
-        </div>
-      </header>
+        </header>
 
-      {dbError && (
-        <div className="dashboard-error">
-          <span>⚠️</span> {dbError}
-          <button onClick={() => setDbError(null)}>×</button>
-        </div>
-      )}
-
-      <main className="dashboard-main">
-        {activeTab === 'ingredients' && (
-          <div className="tab-content">
-            <div className="add-buttons">
-              <button 
-                className="add-button photo-button"
-                onClick={() => setShowAddModal('photo')}
-              >
-                <span className="button-icon">📸</span>
-                <span className="button-text">Scan Photo</span>
-              </button>
-              <button 
-                className="add-button manual-button"
-                onClick={() => setShowAddModal('manual')}
-              >
-                <span className="button-icon">✏️</span>
-                <span className="button-text">Add Manual</span>
+        {dbError && (
+          <div style={{ padding: '12px 20px 0' }}>
+            <div className="mp-alert">
+              <AlertIcon size={16} />
+              <span>{dbError}</span>
+              <button className="mp-alert-close" onClick={() => setDbError(null)}>
+                <XIcon size={14} />
               </button>
             </div>
-
-            <IngredientList 
-              ingredients={ingredients}
-              userId={user.uid}
-            />
           </div>
         )}
 
-        {activeTab === 'suggestions' && (
-          <MealSuggestions 
-            ingredients={ingredients}
-            preferredMeals={preferredMeals}
+        <main className="mp-main">
+          {activeTab === 'ingredients' && (
+            <>
+              <div className="mp-action-bar">
+                <button 
+                  className="mp-action"
+                  onClick={() => setShowAddModal('photo')}
+                >
+                  <CameraIcon size={18} />
+                  <span>Scan photo</span>
+                </button>
+                <button 
+                  className="mp-action"
+                  onClick={() => setShowAddModal('manual')}
+                >
+                  <PlusIcon size={18} />
+                  <span>Add manually</span>
+                </button>
+              </div>
+
+              <IngredientList 
+                ingredients={ingredients}
+                userId={user.uid}
+              />
+            </>
+          )}
+
+          {activeTab === 'suggestions' && (
+            <MealSuggestions 
+              ingredients={ingredients}
+              preferredMeals={preferredMeals}
+              userId={user.uid}
+            />
+          )}
+
+          {activeTab === 'favorites' && (
+            <PreferredMealsManager 
+              meals={preferredMeals}
+              userId={user.uid}
+            />
+          )}
+        </main>
+
+        <nav className="mp-nav">
+          <div className="mp-nav-inner">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                className={`mp-nav-item ${activeTab === tab.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                <tab.Icon size={20} />
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </nav>
+
+        {showAddModal === 'photo' && (
+          <PhotoIngredientCapture
             userId={user.uid}
+            onClose={() => setShowAddModal(null)}
+            existingIngredients={ingredients}
           />
         )}
 
-        {activeTab === 'favorites' && (
-          <PreferredMealsManager 
-            meals={preferredMeals}
+        {showAddModal === 'manual' && (
+          <ManualIngredientEntry
             userId={user.uid}
+            onClose={() => setShowAddModal(null)}
+            existingIngredients={ingredients}
           />
         )}
-      </main>
-
-      <nav className="dashboard-nav">
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            className={`nav-tab ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            <span className="tab-icon">{tab.icon}</span>
-            <span className="tab-label">{tab.label}</span>
-          </button>
-        ))}
-      </nav>
-
-      {showAddModal === 'photo' && (
-        <PhotoIngredientCapture
-          userId={user.uid}
-          onClose={() => setShowAddModal(null)}
-          existingIngredients={ingredients}
-        />
-      )}
-
-      {showAddModal === 'manual' && (
-        <ManualIngredientEntry
-          userId={user.uid}
-          onClose={() => setShowAddModal(null)}
-          existingIngredients={ingredients}
-        />
-      )}
+      </div>
     </div>
   );
 }

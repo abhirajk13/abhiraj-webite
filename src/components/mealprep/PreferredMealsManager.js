@@ -1,5 +1,15 @@
 import { useState } from 'react';
 import { preferredMealsService } from '../../services/mealPrepDataService';
+import { 
+  PlusIcon, 
+  EditIcon, 
+  TrashIcon, 
+  ArrowUpIcon, 
+  ArrowDownIcon,
+  HeartIcon,
+  ClockIcon,
+  AlertIcon
+} from './Icons';
 
 function PreferredMealsManager({ meals, userId }) {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -94,77 +104,64 @@ function PreferredMealsManager({ meals, userId }) {
     await preferredMealsService.reorder(userId, newOrder.map(m => m.id));
   };
 
-  const difficultyColors = {
-    Easy: '#22c55e',
-    Medium: '#f59e0b',
-    Hard: '#ef4444'
-  };
-
   return (
-    <div className="preferred-meals">
-      <div className="meals-header">
-        <div>
-          <h3>Favorite Meals</h3>
-          <p className="meals-subtitle">
-            {meals.length} meal{meals.length !== 1 ? 's' : ''} saved
-          </p>
-        </div>
-        <button 
-          className="add-meal-button"
-          onClick={() => setShowAddForm(true)}
-        >
-          + Add Meal
-        </button>
+    <>
+      <div className="mp-section-header">
+        <h2 className="mp-section-title">Saved meals</h2>
+        {!showAddForm && (
+          <button 
+            className="mp-btn mp-btn-secondary"
+            onClick={() => setShowAddForm(true)}
+            style={{ padding: '6px 12px', fontSize: '13px' }}
+          >
+            <PlusIcon size={14} />
+            New meal
+          </button>
+        )}
       </div>
 
-      {meals.length === 0 && !showAddForm && (
-        <div className="empty-meals">
-          <div className="empty-icon">❤️</div>
-          <h3>No Favorite Meals</h3>
-          <p>Add your go-to meals to get personalized suggestions</p>
-          <button 
-            className="add-first-meal"
-            onClick={() => setShowAddForm(true)}
-          >
-            Add Your First Meal
-          </button>
-        </div>
-      )}
-
       {showAddForm && (
-        <div className="meal-form-card">
-          <h4>{editingMeal ? 'Edit Meal' : 'Add New Meal'}</h4>
+        <div className="mp-meal-form">
+          <h3 className="mp-meal-form-title">
+            {editingMeal ? 'Edit meal' : 'New meal'}
+          </h3>
           
           {error && (
-            <div className="form-error">⚠️ {error}</div>
+            <div className="mp-alert">
+              <AlertIcon size={16} />
+              <span>{error}</span>
+            </div>
           )}
           
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label>Meal Name *</label>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div className="mp-field">
+              <label>Name</label>
               <input
                 type="text"
+                className="mp-input"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g., Chicken Stir Fry"
+                placeholder="e.g., Chicken stir fry"
                 required
               />
             </div>
 
-            <div className="form-group">
-              <label>Ingredients (comma separated)</label>
+            <div className="mp-field">
+              <label>Ingredients</label>
               <input
                 type="text"
+                className="mp-input"
                 value={formData.ingredients}
                 onChange={(e) => setFormData({ ...formData, ingredients: e.target.value })}
-                placeholder="e.g., chicken, rice, vegetables, soy sauce"
+                placeholder="chicken, rice, vegetables..."
               />
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
+            <div className="mp-form-row">
+              <div className="mp-field">
                 <label>Difficulty</label>
                 <select
+                  className="mp-select"
                   value={formData.difficulty}
                   onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
                 >
@@ -174,10 +171,11 @@ function PreferredMealsManager({ meals, userId }) {
                 </select>
               </div>
 
-              <div className="form-group">
-                <label>Prep Time (min)</label>
+              <div className="mp-field">
+                <label>Prep time (min)</label>
                 <input
                   type="number"
+                  className="mp-input"
                   value={formData.prepTimeMinutes}
                   onChange={(e) => setFormData({ ...formData, prepTimeMinutes: e.target.value })}
                   min="5"
@@ -186,89 +184,118 @@ function PreferredMealsManager({ meals, userId }) {
               </div>
             </div>
 
-            <div className="form-actions">
+            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
               <button 
                 type="button" 
-                className="cancel-button"
+                className="mp-btn mp-btn-secondary"
                 onClick={resetForm}
+                style={{ flex: 1 }}
               >
                 Cancel
               </button>
               <button 
                 type="submit" 
-                className="save-button"
+                className="mp-btn mp-btn-primary"
                 disabled={loading}
+                style={{ flex: 2 }}
               >
-                {loading ? 'Saving...' : (editingMeal ? 'Update Meal' : 'Add Meal')}
+                {loading ? (
+                  <>
+                    <span className="mp-spinner"></span>
+                    Saving
+                  </>
+                ) : (editingMeal ? 'Update meal' : 'Save meal')}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      <div className="meals-list">
+      {meals.length === 0 && !showAddForm && (
+        <div className="mp-empty">
+          <div className="mp-empty-icon">
+            <HeartIcon size={22} />
+          </div>
+          <h3>No saved meals</h3>
+          <p>Save your go-to meals to get personalized AI recommendations</p>
+          <button 
+            className="mp-btn mp-btn-primary"
+            onClick={() => setShowAddForm(true)}
+            style={{ marginTop: '8px' }}
+          >
+            <PlusIcon size={14} />
+            Add first meal
+          </button>
+        </div>
+      )}
+
+      <div className="mp-meal-cards">
         {meals.map((meal, index) => (
           <div 
             key={meal.id} 
-            className={`meal-card ${deletingId === meal.id ? 'deleting' : ''}`}
+            className={`mp-meal-card ${deletingId === meal.id ? 'deleting' : ''}`}
           >
-            <div className="meal-rank">#{index + 1}</div>
-            <div className="meal-content">
-              <h4 className="meal-name">{meal.name}</h4>
+            <div className="mp-meal-rank">{index + 1}</div>
+            <div className="mp-meal-content">
+              <h4 className="mp-meal-name">{meal.name}</h4>
               {meal.ingredients?.length > 0 && (
-                <div className="meal-ingredients">
+                <div className="mp-meal-tags">
                   {meal.ingredients.slice(0, 5).map((ing, i) => (
-                    <span key={i} className="ingredient-tag">{ing}</span>
+                    <span key={i} className="mp-badge">{ing}</span>
                   ))}
                   {meal.ingredients.length > 5 && (
-                    <span className="ingredient-more">+{meal.ingredients.length - 5}</span>
+                    <span className="mp-badge mp-badge-accent">
+                      +{meal.ingredients.length - 5}
+                    </span>
                   )}
                 </div>
               )}
-              <div className="meal-meta">
-                <span 
-                  className="difficulty-badge"
-                  style={{ background: difficultyColors[meal.difficulty] + '20', color: difficultyColors[meal.difficulty] }}
-                >
-                  {meal.difficulty}
+              <div className="mp-meal-meta">
+                <span className="mp-badge">{meal.difficulty}</span>
+                <span className="mp-badge">
+                  <ClockIcon size={10} />
+                  {meal.prepTimeMinutes}m
                 </span>
-                <span className="time-badge">⏱️ {meal.prepTimeMinutes} min</span>
               </div>
             </div>
-            <div className="meal-actions">
-              <div className="reorder-buttons">
+            <div className="mp-meal-actions">
+              <div className="mp-reorder">
                 <button 
-                  className="move-button"
+                  className="mp-icon-btn"
                   onClick={() => handleMoveUp(index)}
                   disabled={index === 0}
+                  aria-label="Move up"
                 >
-                  ↑
+                  <ArrowUpIcon size={12} />
                 </button>
                 <button 
-                  className="move-button"
+                  className="mp-icon-btn"
                   onClick={() => handleMoveDown(index)}
                   disabled={index === meals.length - 1}
+                  aria-label="Move down"
                 >
-                  ↓
+                  <ArrowDownIcon size={12} />
                 </button>
               </div>
               <button 
-                className="edit-button"
+                className="mp-icon-btn"
                 onClick={() => handleEdit(meal)}
+                aria-label="Edit"
               >
-                ✏️
+                <EditIcon size={14} />
               </button>
               <button 
-                className="delete-button"
+                className="mp-icon-btn danger"
                 onClick={() => handleDelete(meal.id)}
+                aria-label="Delete"
               >
-                🗑️
+                <TrashIcon size={14} />
               </button>
             </div>
           </div>
         ))}
       </div>
-    </div>
+    </>
   );
 }
 
