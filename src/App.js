@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import './App.css';
 import Valentine from './components/Valentine';
 import PrivatePortal from './components/mealprep/PrivatePortal';
@@ -44,6 +44,7 @@ function AnimatedCounter({ end, duration = 2000, suffix = '' }) {
 }
 
 function AppContent() {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [activeSection, setActiveSection] = useState('hero');
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -609,6 +610,17 @@ function AppContent() {
         <div className="footer-content">
           <p>© 2026 Abhiraj Kane. Built with React & passion.</p>
           <p className="footer-tagline">Software Engineer • AI Architect • Problem Solver</p>
+          <button
+            className="footer-portal-link"
+            onClick={() => navigate('/portal')}
+            aria-label="Private portal"
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            <span>Portal</span>
+          </button>
         </div>
       </footer>
     </div>
