@@ -83,11 +83,17 @@ function PhotoIngredientCapture({ userId, onClose, existingIngredients }) {
     }
 
     setLoading(true);
+    setError('');
+    
     try {
       await ingredientsService.addMany(userId, selectedIngredients.map(({ selected, ...i }) => i));
       onClose();
     } catch (err) {
-      setError('Failed to save ingredients');
+      console.error('Failed to save ingredients:', err);
+      setError(err.code === 'permission-denied' 
+        ? 'Database access denied. Check Firestore rules.' 
+        : `Failed to save: ${err.message}`);
+    } finally {
       setLoading(false);
     }
   };

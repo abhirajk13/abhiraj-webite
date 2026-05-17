@@ -1,30 +1,111 @@
 const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+
+const parseJsonArray = (text) => {
+  const jsonMatch = text.match(/\[[\s\S]*\]/);
+  if (!jsonMatch) {
+    console.error('No JSON array found in response');
+    return [];
+  }
+  
+  let jsonStr = jsonMatch[0];
+  
+  try {
+    return JSON.parse(jsonStr);
+  } catch (e) {
+    console.log('Initial parse failed, attempting to fix JSON...');
+    
+    jsonStr = jsonStr
+      .replace(/,\s*}/g, '}')
+      .replace(/,\s*\]/g, ']')
+      .replace(/'/g, '"')
+      .replace(/(\w+):/g, '"$1":')
+      .replace(/:\s*"([^"]*)"([^,\]\}])/g, ': "$1"$2');
+    
+    try {
+      return JSON.parse(jsonStr);
+    } catch (e2) {
+      const objects = [];
+      const objRegex = /\{[^{}]*\}/g;
+      let match;
+      
+      while ((match = objRegex.exec(text)) !== null) {
+        try {
+          const cleaned = match[0]
+            .replace(/,\s*}/g, '}')
+            .replace(/'/g, '"');
+          objects.push(JSON.parse(cleaned));
+        } catch (e3) {
+          continue;
+        }
+      }
+      
+      if (objects.length > 0) {
+        console.log(`Recovered ${objects.length} objects from malformed JSON`);
+        return objects;
+      }
+      
+      console.error('Failed to parse JSON:', e2);
+      return [];
+    }
+  }
+};
+
+const MODELS = [
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-preview-05-20',
+  'gemini-1.5-flash',
+  'gemini-1.5-flash-latest', 
+  'gemini-1.5-pro'
+];
 
 const callGemini = async (contents) => {
-  const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      contents,
-      generationConfig: {
-        temperature: 0.4,
-        topK: 32,
-        topP: 1,
-        maxOutputTokens: 4096,
-      },
-    }),
-  });
+  let lastError = null;
+  
+  for (const model of MODELS) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+    
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents,
+          generationConfig: {
+            temperature: 0.4,
+            topK: 32,
+            topP: 1,
+            maxOutputTokens: 4096,
+          },
+        }),
+      });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error?.message || 'Gemini API request failed');
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`Using Gemini model: ${model}`);
+        return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      }
+      
+      const error = await response.json();
+      lastError = error.error?.message || 'API request failed';
+      
+      if (response.status === 404 || response.status === 429) {
+        console.log(`Model ${model} unavailable (${response.status}), trying next...`);
+        continue;
+      }
+      
+      throw new Error(lastError);
+    } catch (err) {
+      lastError = err.message;
+      if (err.message?.includes('not found') || err.message?.includes('quota')) {
+        continue;
+      }
+      throw err;
+    }
   }
-
-  const data = await response.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  
+  throw new Error(lastError || 'No available Gemini model found. Please check your API key at https://aistudio.google.com/apikey');
 };
 
 export const extractIngredientsFromImage = async (imageBase64) => {
@@ -57,18 +138,17 @@ Do not include any explanation, just the JSON array.`;
 
     const response = await callGemini(contents);
     
-    const jsonMatch = response.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      console.error('No JSON array found in response:', response);
+    const ingredients = parseJsonArray(response);
+    if (!ingredients || ingredients.length === 0) {
+      console.log('No ingredients detected in image');
       return [];
     }
     
-    const ingredients = JSON.parse(jsonMatch[0]);
     return ingredients.map((ing, index) => ({
       id: `photo-${Date.now()}-${index}`,
-      name: ing.name,
+      name: ing.name || 'Unknown',
       category: ing.category || 'Other',
-      quantity: ing.quantity,
+      quantity: ing.quantity || null,
       source: 'photo',
       addedAt: new Date().toISOString(),
     }));
@@ -119,16 +199,23 @@ Do not include any explanation, just the JSON array.`;
     const contents = [{ parts: [{ text: prompt }] }];
     const response = await callGemini(contents);
     
-    const jsonMatch = response.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      console.error('No JSON array found in response:', response);
+    const suggestions = parseJsonArray(response);
+    if (!suggestions || suggestions.length === 0) {
+      console.error('No valid suggestions parsed from response');
       return [];
     }
     
-    const suggestions = JSON.parse(jsonMatch[0]);
     return suggestions.map((meal, index) => ({
       id: `suggestion-${Date.now()}-${index}`,
-      ...meal,
+      name: meal.name || 'Unnamed Meal',
+      description: meal.description || '',
+      matchedIngredients: meal.matchedIngredients || [],
+      missingIngredients: meal.missingIngredients || [],
+      difficulty: meal.difficulty || 'Medium',
+      prepTimeMinutes: meal.prepTimeMinutes || 30,
+      matchScore: meal.matchScore || 0.5,
+      isPreferred: meal.isPreferred || false,
+      instructions: meal.instructions || [],
       generatedAt: new Date().toISOString(),
     }));
   } catch (error) {

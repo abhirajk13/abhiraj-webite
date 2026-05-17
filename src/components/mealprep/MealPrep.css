@@ -298,6 +298,29 @@
   background: var(--mp-bg-secondary);
 }
 
+.dashboard-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--mp-error);
+  padding: 12px 16px;
+  margin: 0 20px;
+  border-radius: var(--mp-radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.dashboard-error button {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--mp-error);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
 .dashboard-main {
   flex: 1;
   padding: 20px;

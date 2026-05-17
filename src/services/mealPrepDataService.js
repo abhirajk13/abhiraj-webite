@@ -18,41 +18,62 @@ const getUserCollection = (userId, collectionName) => {
 };
 
 export const ingredientsService = {
-  subscribe: (userId, callback) => {
-    const q = query(
-      getUserCollection(userId, 'ingredients'),
-      orderBy('addedAt', 'desc')
+  subscribe: (userId, callback, onError) => {
+    const collectionRef = getUserCollection(userId, 'ingredients');
+    return onSnapshot(
+      collectionRef, 
+      (snapshot) => {
+        const ingredients = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        ingredients.sort((a, b) => {
+          const aTime = a.addedAt?.toMillis?.() || 0;
+          const bTime = b.addedAt?.toMillis?.() || 0;
+          return bTime - aTime;
+        });
+        callback(ingredients);
+      },
+      (error) => {
+        console.error('Firestore subscription error:', error);
+        if (onError) onError(error);
+      }
     );
-    return onSnapshot(q, (snapshot) => {
-      const ingredients = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      callback(ingredients);
-    });
   },
 
   add: async (userId, ingredient) => {
-    const docRef = await addDoc(getUserCollection(userId, 'ingredients'), {
-      ...ingredient,
-      addedAt: serverTimestamp()
-    });
-    return docRef.id;
-  },
-
-  addMany: async (userId, ingredients) => {
-    const batch = writeBatch(db);
-    const collectionRef = getUserCollection(userId, 'ingredients');
-    
-    ingredients.forEach(ingredient => {
-      const docRef = doc(collectionRef);
-      batch.set(docRef, {
+    try {
+      const docRef = await addDoc(getUserCollection(userId, 'ingredients'), {
         ...ingredient,
         addedAt: serverTimestamp()
       });
-    });
-    
-    await batch.commit();
+      console.log('Ingredient added:', docRef.id);
+      return docRef.id;
+    } catch (error) {
+      console.error('Error adding ingredient:', error);
+      throw error;
+    }
+  },
+
+  addMany: async (userId, ingredients) => {
+    try {
+      const batch = writeBatch(db);
+      const collectionRef = getUserCollection(userId, 'ingredients');
+      
+      ingredients.forEach(ingredient => {
+        const docRef = doc(collectionRef);
+        batch.set(docRef, {
+          ...ingredient,
+          addedAt: serverTimestamp()
+        });
+      });
+      
+      await batch.commit();
+      console.log(`Added ${ingredients.length} ingredients`);
+    } catch (error) {
+      console.error('Error adding ingredients:', error);
+      throw error;
+    }
   },
 
   update: async (userId, ingredientId, updates) => {
@@ -74,18 +95,23 @@ export const ingredientsService = {
 };
 
 export const preferredMealsService = {
-  subscribe: (userId, callback) => {
-    const q = query(
-      getUserCollection(userId, 'preferredMeals'),
-      orderBy('sortOrder', 'asc')
+  subscribe: (userId, callback, onError) => {
+    const collectionRef = getUserCollection(userId, 'preferredMeals');
+    return onSnapshot(
+      collectionRef,
+      (snapshot) => {
+        const meals = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        meals.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+        callback(meals);
+      },
+      (error) => {
+        console.error('Firestore subscription error:', error);
+        if (onError) onError(error);
+      }
     );
-    return onSnapshot(q, (snapshot) => {
-      const meals = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      callback(meals);
-    });
   },
 
   add: async (userId, meal) => {
@@ -127,18 +153,27 @@ export const preferredMealsService = {
 };
 
 export const suggestionsService = {
-  subscribe: (userId, callback) => {
-    const q = query(
-      getUserCollection(userId, 'suggestions'),
-      orderBy('generatedAt', 'desc')
+  subscribe: (userId, callback, onError) => {
+    const collectionRef = getUserCollection(userId, 'suggestions');
+    return onSnapshot(
+      collectionRef,
+      (snapshot) => {
+        const suggestions = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        suggestions.sort((a, b) => {
+          const aTime = a.generatedAt?.toMillis?.() || 0;
+          const bTime = b.generatedAt?.toMillis?.() || 0;
+          return bTime - aTime;
+        });
+        callback(suggestions);
+      },
+      (error) => {
+        console.error('Firestore subscription error:', error);
+        if (onError) onError(error);
+      }
     );
-    return onSnapshot(q, (snapshot) => {
-      const suggestions = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      callback(suggestions);
-    });
   },
 
   save: async (userId, suggestions) => {

@@ -127,6 +127,8 @@ function ManualIngredientEntry({ userId, onClose, existingIngredients }) {
     }
 
     setLoading(true);
+    setError('');
+    
     try {
       const ingredients = selectedItems.map(name => ({
         name,
@@ -138,7 +140,11 @@ function ManualIngredientEntry({ userId, onClose, existingIngredients }) {
       await ingredientsService.addMany(userId, ingredients);
       onClose();
     } catch (err) {
-      setError('Failed to save ingredients');
+      console.error('Failed to save ingredients:', err);
+      setError(err.code === 'permission-denied' 
+        ? 'Database access denied. Check Firestore rules.' 
+        : `Failed to save: ${err.message}`);
+    } finally {
       setLoading(false);
     }
   };

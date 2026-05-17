@@ -16,12 +16,30 @@ function MealPrepDashboard() {
   const [preferredMeals, setPreferredMeals] = useState([]);
   const [showAddModal, setShowAddModal] = useState(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [dbError, setDbError] = useState(null);
 
   useEffect(() => {
     if (!user) return;
 
-    const unsubIngredients = ingredientsService.subscribe(user.uid, setIngredients);
-    const unsubMeals = preferredMealsService.subscribe(user.uid, setPreferredMeals);
+    const handleError = (error) => {
+      console.error('Database error:', error);
+      if (error.code === 'permission-denied') {
+        setDbError('Database access denied. Please check Firestore security rules.');
+      } else {
+        setDbError(`Database error: ${error.message}`);
+      }
+    };
+
+    const unsubIngredients = ingredientsService.subscribe(
+      user.uid, 
+      setIngredients,
+      handleError
+    );
+    const unsubMeals = preferredMealsService.subscribe(
+      user.uid, 
+      setPreferredMeals,
+      handleError
+    );
 
     return () => {
       unsubIngredients();
@@ -59,6 +77,13 @@ function MealPrepDashboard() {
           </button>
         </div>
       </header>
+
+      {dbError && (
+        <div className="dashboard-error">
+          <span>⚠️</span> {dbError}
+          <button onClick={() => setDbError(null)}>×</button>
+        </div>
+      )}
 
       <main className="dashboard-main">
         {activeTab === 'ingredients' && (
